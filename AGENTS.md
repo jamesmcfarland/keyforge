@@ -2,9 +2,10 @@
 
 ## Build & Development Commands
 
-- **Dev**: `npm run dev` (runs `tsx watch src/index.ts`)
-- **Build**: `npm run build` (runs `tsc` - TypeScript compilation)
-- **Start**: `npm start` (runs `node dist/index.js`)
+- **Dev**: `pnpm run dev` (runs `tsx watch src/index.ts`)
+- **Build**: `pnpm run build` (runs `tsc`)
+- **Start**: `pnpm start` (runs `node dist/index.js`)
+- **Database**: `pnpm run db:generate` (drizzle-kit generate), `pnpm run db:migrate` (run migrations)
 - **Package Manager**: pnpm (v10.13.1+)
 
 No test or lint commands are currently configured. Tests should be added if needed.
@@ -21,12 +22,12 @@ No test or lint commands are currently configured. Tests should be added if need
 
 ### TypeScript & Types
 - **Strict mode enabled** - all files use strict type checking (`"strict": true`)
-- **Module syntax**: `verbatimModuleSyntax: true` - explicit type imports required
+- **Module syntax**: `verbatimModuleSyntax: true` - explicit type imports required with `.js` extensions
 - **Target**: ESNext, Module: NodeNext
 - Always annotate function return types and parameters
 
 ### Imports
-- Use ES module syntax (`import`/`export`)
+- Use ES module syntax (`import`/`export`) with `.js` extensions (e.g., `import admin from './routes/admin.js'`)
 - For type-only imports, use `import type` (required by verbatimModuleSyntax)
 - Framework imports: Hono from `hono` and `@hono/node-server`
 - JSX imports from `hono/jsx`
@@ -34,8 +35,9 @@ No test or lint commands are currently configured. Tests should be added if need
 ### Code Patterns
 - **Web framework**: Hono for HTTP routes and middleware
 - **Services pattern**: Create service modules (e.g., `services/vaultwd-client.ts`, `services/registry.ts`)
-- **Routing pattern**: Define routes in separate files (e.g., `routes/admin.ts`, `routes/passwords.ts`)
+- **Routing pattern**: Define routes in separate files (e.g., `routes/admin.ts`, `routes/societies.ts`)
 - **Middleware**: Use Hono middleware for auth and error handling
+- **Database**: Drizzle ORM with postgres driver
 
 ### Error Handling
 - Include error handling in all async operations
@@ -50,8 +52,9 @@ No test or lint commands are currently configured. Tests should be added if need
 
 ### External Libraries
 - Shell execution: `execa` for kubectl/helm operations
-- Database: Drizzle ORM for PostgreSQL
+- Database: Drizzle ORM with `postgres` driver
 - Server: `@hono/node-server`
+- Password hashing: `argon2`
 
 ## Architecture Notes
 
