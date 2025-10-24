@@ -89,7 +89,7 @@ Error: password authentication failed for user "keyforge"
 
 **Symptoms:**
 ```
-Error: Failed to provision union: kubectl connection refused
+Error: Failed to provision instance: kubectl connection refused
 ```
 
 **Solutions:**
@@ -131,7 +131,7 @@ Error: Failed to provision union: kubectl connection refused
 **Symptoms:**
 ```
 Error from server: dial tcp 127.0.0.1:26443: connect: connection refused
-Failed to provision society: helm/kubectl commands failed
+Failed to provision organisation: helm/kubectl commands failed
 ```
 
 **Root Cause:**
@@ -323,20 +323,20 @@ VaultWarden deployment did not become ready within timeout
 
 1. **Check deployment status:**
    ```bash
-   kubectl get deployments -n <union-id>
-   kubectl describe deployment vaultwd -n <union-id>
-   kubectl get pods -n <union-id>
+   kubectl get deployments -n <instance-id>
+   kubectl describe deployment vaultwd -n <instance-id>
+   kubectl get pods -n <instance-id>
    ```
 
 2. **Check pod logs:**
    ```bash
-   kubectl logs -n <union-id> -l app=vaultwd --tail=50
-   kubectl logs -n <union-id> -l app=postgres --tail=50
+   kubectl logs -n <instance-id> -l app=vaultwd --tail=50
+   kubectl logs -n <instance-id> -l app=postgres --tail=50
    ```
 
 3. **Check pod events:**
    ```bash
-   kubectl get events -n <union-id> --sort-by='.lastTimestamp'
+   kubectl get events -n <instance-id> --sort-by='.lastTimestamp'
    ```
 
 4. **Common causes:**
@@ -364,13 +364,13 @@ Error: cannot re-use a name that is still in use
 
 2. **Uninstall existing release:**
    ```bash
-   helm uninstall <union-id> -n <union-id>
-   kubectl delete namespace <union-id>
+   helm uninstall <instance-id> -n <instance-id>
+   kubectl delete namespace <instance-id>
    ```
 
 3. **Or use the API:**
    ```bash
-   curl -X DELETE http://localhost:3000/unions/<union-id>
+    curl -X DELETE http://localhost:3000/instances/<instance-id>
    ```
 
 ---
@@ -539,8 +539,8 @@ Error: Bind for 0.0.0.0:3000 failed: port is already allocated
 
 4. **Test helm chart manually:**
    ```bash
-   helm install test-union ./helm-chart \
-     --namespace test-union \
+    helm install test-instance ./helm-chart \
+      --namespace test-instance \
      --create-namespace \
      --set vaultwd.adminToken=test123 \
      --dry-run --debug
@@ -552,8 +552,8 @@ Error: Bind for 0.0.0.0:3000 failed: port is already allocated
 
 1. **Check PVC status:**
    ```bash
-   kubectl get pvc -n <union-id>
-   kubectl describe pvc -n <union-id>
+   kubectl get pvc -n <instance-id>
+   kubectl describe pvc -n <instance-id>
    ```
 
 2. **Check if cluster has storage class:**
@@ -602,9 +602,9 @@ docker compose exec postgres psql -U keyforge -d keyforge -c "SELECT * FROM depl
 
 ### Check Kubernetes resources:
 ```bash
-kubectl get all -n <union-id>
-kubectl get events -n <union-id> --sort-by='.lastTimestamp'
-kubectl logs -n <union-id> deployment/vaultwd --tail=50
+kubectl get all -n <instance-id>
+kubectl get events -n <instance-id> --sort-by='.lastTimestamp'
+kubectl logs -n <instance-id> deployment/vaultwd --tail=50
 ```
 
 ### Test helm chart syntax:
@@ -614,9 +614,9 @@ helm lint ./helm-chart
 
 ### Get VaultWarden service URL:
 ```bash
-kubectl get svc -n <union-id>
+kubectl get svc -n <instance-id>
 # For LoadBalancer:
-kubectl get svc vaultwd -n <union-id> -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+kubectl get svc vaultwd -n <instance-id> -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
 ---
@@ -631,9 +631,9 @@ kubectl get svc vaultwd -n <union-id> -o jsonpath='{.status.loadBalancer.ingress
 
 ### Kubernetes Logs
 
-- **VaultWarden pods**: `kubectl logs -n <union-id> -l app=vaultwd`
-- **Postgres pods**: `kubectl logs -n <union-id> -l app=postgres`
-- **All pods in namespace**: `kubectl logs -n <union-id> --all-containers=true`
+- **VaultWarden pods**: `kubectl logs -n <instance-id> -l app=vaultwd`
+- **Postgres pods**: `kubectl logs -n <instance-id> -l app=postgres`
+- **All pods in namespace**: `kubectl logs -n <instance-id> --all-containers=true`
 
 ### Database Logs
 
@@ -677,19 +677,19 @@ docker compose up --build
 **A:**
 1. Get the service URL:
    ```bash
-   kubectl get svc vaultwd -n <union-id>
+   kubectl get svc vaultwd -n <instance-id>
    ```
 2. For LoadBalancer: Use external IP
 3. For NodePort: Use `<node-ip>:<node-port>`
 4. For local (Kind): Set up port forwarding:
    ```bash
-   kubectl port-forward -n <union-id> svc/vaultwd 8080:80
+   kubectl port-forward -n <instance-id> svc/vaultwd 8080:80
    # Access at http://localhost:8080
    ```
 
-### Q: Can I run multiple union deployments?
+### Q: Can I run multiple instance deployments?
 
-**A:** Yes, each union gets its own Kubernetes namespace and isolated resources.
+**A:** Yes, each instance gets its own Kubernetes namespace and isolated resources.
 
 ### Q: How do I check if my kubeconfig is mounted correctly in Docker?
 

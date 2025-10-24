@@ -4,10 +4,10 @@ React-based admin dashboard for monitoring VaultWarden deployments managed by Ke
 
 ## Features
 
-- View all VaultWarden union deployments
+- View all VaultWarden instance deployments
 - Monitor deployment status and events
 - View detailed deployment logs with filtering
-- Create new union deployments
+- Create new instance deployments
 - Real-time deployment tracking
 
 ## Tech Stack
@@ -86,7 +86,7 @@ frontend/
 │   ├── components/
 │   │   ├── DeploymentList.tsx     # List of all deployments
 │   │   ├── Header.tsx             # App header
-│   │   └── NewDeploymentModal.tsx # Create union modal
+│   │   └── NewDeploymentModal.tsx # Create instance modal
 │   ├── hooks/
 │   │   └── useDeployments.ts      # TanStack Query hooks
 │   ├── pages/
@@ -112,17 +112,17 @@ frontend/
 
 The home page displays all VaultWarden deployments:
 
-- **Union ID** - Unique identifier
-- **Union Name** - Human-readable name
+- **Instance ID** - Unique identifier
+- **Instance Name** - Human-readable name
 - **Status** - Deployment status (pending, provisioning, ready, failed)
 - **VaultWarden URL** - Access URL (when ready)
 - **Created At** - Timestamp
 
-### Creating a New Union
+### Creating a New Instance
 
-1. Click **"New Union"** button
-2. Enter a unique union name
-3. Click **"Create Union"**
+1. Click **"New Instance"** button
+2. Enter a unique instance name
+3. Click **"Create Instance"**
 4. Monitor provisioning progress in the deployment list
 
 ### Viewing Deployment Details
@@ -145,20 +145,20 @@ import { api } from './api/client'
 const deployments = await api.getDeployments()
 
 // Get specific deployment
-const deployment = await api.getDeployment('union-123')
+const deployment = await api.getDeployment('instance-123')
 
 // Get deployment events
-const events = await api.getDeploymentEvents('union-123')
+const events = await api.getDeploymentEvents('instance-123')
 
 // Get deployment logs with filtering
-const logs = await api.getDeploymentLogs('union-123', {
+const logs = await api.getDeploymentLogs('instance-123', {
   level: 'error',
   page: 1,
   limit: 50
 })
 
-// Create new union
-const result = await api.createUnion('my-union')
+// Create new instance
+const result = await api.createInstance('my-instance')
 ```
 
 See `src/api/client.ts` for all available methods.
@@ -170,15 +170,15 @@ See `src/api/client.ts` for all available methods.
 TypeScript types are defined in `src/types/index.ts` and should match the OpenAPI spec in `../openapi.yaml`:
 
 ```typescript
-interface Union {
-  union_id: string
+interface Instance {
+  instance_id: string
   name: string
   status: 'pending' | 'provisioning' | 'ready' | 'failed'
   vaultwd_url: string | null
   created_at: string
 }
 
-interface DeploymentDetail extends Union {
+interface DeploymentDetail extends Instance {
   admin_token?: string
 }
 

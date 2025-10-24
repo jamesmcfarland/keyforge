@@ -46,7 +46,7 @@ Stores VaultWarden instance metadata.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | VARCHAR(255) | Primary key, format: `union-{hex}` |
+| `id` | VARCHAR(255) | Primary key, format: `instance-{hex}` |
 | `name` | TEXT | Human-readable name |
 | `vaultwd_url` | TEXT | Internal K8s service URL |
 | `vaultwd_admin_token` | TEXT | Admin authentication token |
@@ -59,7 +59,7 @@ Stores organization metadata within instances.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | VARCHAR(255) | Primary key, format: `society-{hex}` |
+| `id` | VARCHAR(255) | Primary key, format: `organisation-{hex}` |
 | `name` | TEXT | Organisation name |
 | `instance_id` | VARCHAR(255) | Foreign key → `instances.id` (CASCADE DELETE) |
 | `vaultwd_org_id` | TEXT | VaultWarden organization UUID |
@@ -341,7 +341,7 @@ curl -X POST http://localhost:3000/admin/instances \
   -d '{"name":"Test Instance"}'
 
 # Save the instance_id from response
-INSTANCE_ID="union-xxxxxx"
+INSTANCE_ID="instance-xxxxxx"
 
 # Check status (wait for "ready")
 curl http://localhost:3000/admin/instances/$INSTANCE_ID
@@ -351,7 +351,7 @@ curl http://localhost:3000/admin/instances/$INSTANCE_ID
 
 ```bash
 # List instance namespaces
-kubectl get namespaces | grep union
+kubectl get namespaces | grep instance
 
 # Check pods in instance namespace
 kubectl get pods -n $INSTANCE_ID
@@ -380,7 +380,7 @@ curl -X POST http://localhost:3000/instances/$INSTANCE_ID/organisations \
   -d '{"name":"Test Organisation"}'
 
 # Save organisation_id from response
-ORGANISATION_ID="society-xxxxxx"
+ORGANISATION_ID="organisation-xxxxxx"
 
 # Verify
 curl http://localhost:3000/instances/$INSTANCE_ID/organisations/$ORGANISATION_ID

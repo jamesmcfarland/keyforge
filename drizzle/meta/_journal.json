@@ -15,6 +15,13 @@
       "when": 1761322187845,
       "tag": "0001_chilly_firebrand",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1761330000000,
+      "tag": "0002_rename_to_instances",
+      "breakpoints": true
     }
   ]
 }

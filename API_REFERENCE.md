@@ -74,8 +74,8 @@ Provisions a new VaultWarden instance in Kubernetes. Returns immediately with `p
 
 ```json
 {
-  "instance_id": "union-2574af3733dd26f5",
-  "vaultwd_url": "http://vaultwd-service.union-2574af3733dd26f5.svc.cluster.local",
+  "instance_id": "instance-2574af3733dd26f5",
+  "vaultwd_url": "http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local",
   "admin_token": "2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640",
   "status": "provisioning"
 }
@@ -108,9 +108,9 @@ Returns all instances.
 {
   "instances": [
     {
-      "id": "union-2574af3733dd26f5",
+      "id": "instance-2574af3733dd26f5",
       "name": "production-environment",
-      "vaultwd_url": "http://vaultwd-service.union-2574af3733dd26f5.svc.cluster.local",
+      "vaultwd_url": "http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local",
       "vaultwd_admin_token": "2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640",
       "status": "ready",
       "error": null,
@@ -135,15 +135,15 @@ curl http://localhost:3000/admin/instances
 Returns details for a specific instance.
 
 **Path Parameters:**
-- `instance_id` (string, required): Instance identifier (e.g., `union-2574af3733dd26f5`)
+- `instance_id` (string, required): Instance identifier (e.g., `instance-2574af3733dd26f5`)
 
 **Response:** `200 OK`
 
 ```json
 {
-  "id": "union-2574af3733dd26f5",
+  "id": "instance-2574af3733dd26f5",
   "name": "production-environment",
-  "vaultwd_url": "http://vaultwd-service.union-2574af3733dd26f5.svc.cluster.local",
+  "vaultwd_url": "http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local",
   "vaultwd_admin_token": "2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640",
   "status": "ready",
   "error": null,
@@ -159,7 +159,7 @@ Returns details for a specific instance.
 **Example:**
 
 ```bash
-curl http://localhost:3000/admin/instances/union-2574af3733dd26f5
+curl http://localhost:3000/admin/instances/instance-2574af3733dd26f5
 ```
 
 ---
@@ -184,7 +184,7 @@ Deletes an instance's Kubernetes namespace and all associated resources.
 **Example:**
 
 ```bash
-curl -X DELETE http://localhost:3000/admin/instances/union-2574af3733dd26f5
+curl -X DELETE http://localhost:3000/admin/instances/instance-2574af3733dd26f5
 ```
 
 ---
@@ -201,9 +201,9 @@ Returns all deployments (same as [List Instances](#list-instances)).
 {
   "deployments": [
     {
-      "id": "union-2574af3733dd26f5",
+      "id": "instance-2574af3733dd26f5",
       "name": "production-environment",
-      "vaultwd_url": "http://vaultwd-service.union-2574af3733dd26f5.svc.cluster.local",
+      "vaultwd_url": "http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local",
       "vaultwd_admin_token": "2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640",
       "status": "ready",
       "error": null,
@@ -235,9 +235,9 @@ Returns detailed information about a deployment including organisations and even
 ```json
 {
   "instance": {
-    "id": "union-2574af3733dd26f5",
+    "id": "instance-2574af3733dd26f5",
     "name": "production-environment",
-    "vaultwd_url": "http://vaultwd-service.union-2574af3733dd26f5.svc.cluster.local",
+    "vaultwd_url": "http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local",
     "vaultwd_admin_token": "2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640",
     "status": "ready",
     "error": null,
@@ -245,11 +245,11 @@ Returns detailed information about a deployment including organisations and even
   },
   "organisations": [
     {
-      "id": "society-e6557cc8e1656983",
+      "id": "organisation-e6557cc8e1656983",
       "name": "engineering-team",
-      "instance_id": "union-2574af3733dd26f5",
+      "instance_id": "instance-2574af3733dd26f5",
       "vaultwd_org_id": "42b2b981-ed49-48ce-9b3f-7ad6b53c2e46",
-      "vaultwd_user_email": "society-e6557cc8e1656983@keyforge.local",
+      "vaultwd_user_email": "organisation-e6557cc8e1656983@keyforge.local",
       "status": "created",
       "created_at": 1761318156000
     }
@@ -257,7 +257,7 @@ Returns detailed information about a deployment including organisations and even
   "events": [
     {
       "id": "evt-1a2b3c4d5e6f7890",
-      "deployment_id": "union-2574af3733dd26f5",
+      "deployment_id": "instance-2574af3733dd26f5",
       "step": "helm_install",
       "status": "success",
       "message": "Helm chart installed successfully",
@@ -270,7 +270,7 @@ Returns detailed information about a deployment including organisations and even
 **Example:**
 
 ```bash
-curl http://localhost:3000/admin/deployments/union-2574af3733dd26f5
+curl http://localhost:3000/admin/deployments/instance-2574af3733dd26f5
 ```
 
 ---
@@ -288,11 +288,11 @@ Returns all events for a deployment.
 
 ```json
 {
-  "deployment_id": "union-2574af3733dd26f5",
+  "deployment_id": "instance-2574af3733dd26f5",
   "events": [
     {
       "id": "evt-1a2b3c4d5e6f7890",
-      "deployment_id": "union-2574af3733dd26f5",
+      "deployment_id": "instance-2574af3733dd26f5",
       "step": "helm_install",
       "status": "success",
       "message": "Helm chart installed successfully",
@@ -300,7 +300,7 @@ Returns all events for a deployment.
     },
     {
       "id": "evt-2b3c4d5e6f789012",
-      "deployment_id": "union-2574af3733dd26f5",
+      "deployment_id": "instance-2574af3733dd26f5",
       "step": "postgres_ready",
       "status": "success",
       "message": "Postgres deployment ready",
@@ -325,7 +325,7 @@ Returns all events for a deployment.
 **Example:**
 
 ```bash
-curl http://localhost:3000/admin/deployments/union-2574af3733dd26f5/events
+curl http://localhost:3000/admin/deployments/instance-2574af3733dd26f5/events
 ```
 
 ---
@@ -349,20 +349,20 @@ Returns logs for a deployment with pagination and filtering.
 
 ```json
 {
-  "deployment_id": "union-2574af3733dd26f5",
+  "deployment_id": "instance-2574af3733dd26f5",
   "logs": [
     {
       "id": "log-1a2b3c4d5e6f7890",
-      "deployment_id": "union-2574af3733dd26f5",
+      "deployment_id": "instance-2574af3733dd26f5",
       "level": "info",
-      "message": "Installing helm chart for instance union-2574af3733dd26f5",
+      "message": "Installing helm chart for instance instance-2574af3733dd26f5",
       "created_at": 1761318123092
     },
     {
       "id": "log-2b3c4d5e6f789012",
-      "deployment_id": "union-2574af3733dd26f5",
+      "deployment_id": "instance-2574af3733dd26f5",
       "level": "debug",
-      "message": "Helm install stdout: Release \"union-2574af3733dd26f5\" has been installed.",
+      "message": "Helm install stdout: Release \"instance-2574af3733dd26f5\" has been installed.",
       "created_at": 1761318135000
     }
   ],
@@ -376,16 +376,16 @@ Returns logs for a deployment with pagination and filtering.
 
 ```bash
 # Get all logs
-curl http://localhost:3000/admin/deployments/union-2574af3733dd26f5/logs
+curl http://localhost:3000/admin/deployments/instance-2574af3733dd26f5/logs
 
 # Get only error logs
-curl http://localhost:3000/admin/deployments/union-2574af3733dd26f5/logs?level=error
+curl http://localhost:3000/admin/deployments/instance-2574af3733dd26f5/logs?level=error
 
 # Get logs since timestamp
-curl http://localhost:3000/admin/deployments/union-2574af3733dd26f5/logs?since=1761318120000
+curl http://localhost:3000/admin/deployments/instance-2574af3733dd26f5/logs?since=1761318120000
 
 # Pagination
-curl http://localhost:3000/admin/deployments/union-2574af3733dd26f5/logs?page=2&limit=50
+curl http://localhost:3000/admin/deployments/instance-2574af3733dd26f5/logs?page=2&limit=50
 ```
 
 ---
@@ -413,8 +413,8 @@ Creates a new organization (organisation) within an instance.
 
 ```json
 {
-  "organisation_id": "society-e6557cc8e1656983",
-  "instance_id": "union-2574af3733dd26f5",
+  "organisation_id": "organisation-e6557cc8e1656983",
+  "instance_id": "instance-2574af3733dd26f5",
   "vaultwd_org_id": "42b2b981-ed49-48ce-9b3f-7ad6b53c2e46",
   "status": "created"
 }
@@ -427,7 +427,7 @@ Creates a new organization (organisation) within an instance.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:3000/instances/union-2574af3733dd26f5/organisations \
+curl -X POST http://localhost:3000/instances/instance-2574af3733dd26f5/organisations \
   -H "Content-Type: application/json" \
   -d '{"name": "engineering-team"}'
 ```
@@ -448,11 +448,11 @@ Returns details for a specific organisation.
 
 ```json
 {
-  "id": "society-e6557cc8e1656983",
+  "id": "organisation-e6557cc8e1656983",
   "name": "engineering-team",
-  "instance_id": "union-2574af3733dd26f5",
+  "instance_id": "instance-2574af3733dd26f5",
   "vaultwd_org_id": "42b2b981-ed49-48ce-9b3f-7ad6b53c2e46",
-  "vaultwd_user_email": "society-e6557cc8e1656983@keyforge.local",
+  "vaultwd_user_email": "organisation-e6557cc8e1656983@keyforge.local",
   "vaultwd_user_token": "eyJhbGc...",
   "status": "created",
   "created_at": 1761318156000
@@ -462,7 +462,7 @@ Returns details for a specific organisation.
 **Example:**
 
 ```bash
-curl http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983
+curl http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983
 ```
 
 ---
@@ -491,7 +491,7 @@ Creates a new password entry in the organisation's vault.
 ```json
 {
   "password_id": "pwd-657bbc9ee11296d0",
-  "organisation_id": "society-e6557cc8e1656983",
+  "organisation_id": "organisation-e6557cc8e1656983",
   "name": "database-password",
   "created_at": 1761318165804
 }
@@ -500,7 +500,7 @@ Creates a new password entry in the organisation's vault.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords \
+curl -X POST http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords \
   -H "Content-Type: application/json" \
   -d '{"name": "database-password", "value": "super-secret-123"}'
 ```
@@ -521,17 +521,17 @@ Returns all passwords for an organisation (without values).
 
 ```json
 {
-  "organisation_id": "society-e6557cc8e1656983",
+  "organisation_id": "organisation-e6557cc8e1656983",
   "passwords": [
     {
       "id": "pwd-657bbc9ee11296d0",
-      "organisation_id": "society-e6557cc8e1656983",
+      "organisation_id": "organisation-e6557cc8e1656983",
       "name": "database-password",
       "created_at": 1761318165804
     },
     {
       "id": "pwd-789abc0e11296d12",
-      "organisation_id": "society-e6557cc8e1656983",
+      "organisation_id": "organisation-e6557cc8e1656983",
       "name": "api-key",
       "created_at": 1761318180000
     }
@@ -542,7 +542,7 @@ Returns all passwords for an organisation (without values).
 **Example:**
 
 ```bash
-curl http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords
+curl http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords
 ```
 
 ---
@@ -563,7 +563,7 @@ Returns full password details including the **decrypted password value**.
 ```json
 {
   "id": "pwd-657bbc9ee11296d0",
-  "organisation_id": "society-e6557cc8e1656983",
+  "organisation_id": "organisation-e6557cc8e1656983",
   "name": "database-password",
   "value": "super-secret-123",
   "created_at": 1761318165804
@@ -575,7 +575,7 @@ Returns full password details including the **decrypted password value**.
 **Example:**
 
 ```bash
-curl http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0
+curl http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0
 ```
 
 ---
@@ -607,7 +607,7 @@ At least one field is required:
 ```json
 {
   "id": "pwd-657bbc9ee11296d0",
-  "organisation_id": "society-e6557cc8e1656983",
+  "organisation_id": "organisation-e6557cc8e1656983",
   "name": "updated-password-name",
   "value": "new-super-secret-456",
   "created_at": 1761318165804
@@ -618,17 +618,17 @@ At least one field is required:
 
 ```bash
 # Update both name and value
-curl -X PUT http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0 \
+curl -X PUT http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0 \
   -H "Content-Type: application/json" \
   -d '{"name": "updated-password-name", "value": "new-super-secret-456"}'
 
 # Update only the name
-curl -X PUT http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0 \
+curl -X PUT http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0 \
   -H "Content-Type: application/json" \
   -d '{"name": "renamed-password"}'
 
 # Update only the value
-curl -X PUT http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0 \
+curl -X PUT http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0 \
   -H "Content-Type: application/json" \
   -d '{"value": "rotated-password-123"}'
 ```
@@ -657,7 +657,7 @@ Deletes a password entry from the organisation.
 **Example:**
 
 ```bash
-curl -X DELETE http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0
+curl -X DELETE http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0
 ```
 
 ---
@@ -678,7 +678,7 @@ Checks if the VaultWarden instance for an instance is healthy and responding.
 ```json
 {
   "status": "healthy",
-  "instance_id": "union-2574af3733dd26f5",
+  "instance_id": "instance-2574af3733dd26f5",
   "message": null,
   "checked_at": 1761318200000
 }
@@ -689,7 +689,7 @@ Checks if the VaultWarden instance for an instance is healthy and responding.
 ```json
 {
   "status": "unhealthy",
-  "instance_id": "union-2574af3733dd26f5",
+  "instance_id": "instance-2574af3733dd26f5",
   "message": "VaultWarden returned status 503",
   "checked_at": 1761318200000
 }
@@ -698,7 +698,7 @@ Checks if the VaultWarden instance for an instance is healthy and responding.
 **Example:**
 
 ```bash
-curl http://localhost:3000/health/vaultwd/union-2574af3733dd26f5
+curl http://localhost:3000/health/vaultwd/instance-2574af3733dd26f5
 ```
 
 ---
@@ -723,8 +723,8 @@ All IDs follow specific patterns:
 
 | Type | Pattern | Example |
 |------|---------|---------|
-| Instance ID | `union-[a-f0-9]{16}` | `union-2574af3733dd26f5` |
-| Organisation ID | `society-[a-f0-9]{16}` | `society-e6557cc8e1656983` |
+| Instance ID | `instance-[a-f0-9]{16}` | `instance-2574af3733dd26f5` |
+| Organisation ID | `organisation-[a-f0-9]{16}` | `organisation-e6557cc8e1656983` |
 | Password ID | `pwd-[a-f0-9]{16}` | `pwd-657bbc9ee11296d0` |
 | Event ID | `evt-[a-f0-9]{16}` | `evt-1a2b3c4d5e6f7890` |
 | Log ID | `log-[a-f0-9]{16}` | `log-1a2b3c4d5e6f7890` |

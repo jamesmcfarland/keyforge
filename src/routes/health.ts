@@ -5,28 +5,28 @@ import * as vaultwd from '../services/vaultwd-client.js'
 
 const health = new Hono()
 
-health.get('/vaultwd/:union_id', async (c) => {
-  const unionId = c.req.param('union_id')
-  const union = await registry.getUnion(unionId)
+health.get('/vaultwd/:instance_id', async (c) => {
+  const instanceId = c.req.param('instance_id')
+  const instance = await registry.getInstance(instanceId)
 
-  if (!union) {
-    return c.json({ error: 'Union not found' }, 404)
+  if (!instance) {
+    return c.json({ error: 'Instance not found' }, 404)
   }
 
-  if (union.status !== 'ready') {
+  if (instance.status !== 'ready') {
     return c.json({
       status: 'unhealthy',
-      union_id: unionId,
-      message: `Union status is ${union.status}`,
+      instance_id: instanceId,
+      message: `Instance status is ${instance.status}`,
       checked_at: Date.now()
     } as HealthCheck, 503)
   }
 
-  const healthResult = await vaultwd.checkHealth(union.vaultwd_url)
+  const healthResult = await vaultwd.checkHealth(instance.vaultwd_url)
 
   const response: HealthCheck = {
     status: healthResult.status,
-    union_id: unionId,
+    instance_id: instanceId,
     message: healthResult.message,
     checked_at: Date.now()
   }

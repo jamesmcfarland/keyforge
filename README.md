@@ -101,8 +101,8 @@ curl -X POST http://localhost:3000/admin/instances \
 Response:
 ```json
 {
-  "instance_id": "union-2574af3733dd26f5",
-  "vaultwd_url": "http://vaultwd-service.union-2574af3733dd26f5.svc.cluster.local",
+  "instance_id": "instance-2574af3733dd26f5",
+  "vaultwd_url": "http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local",
   "admin_token": "...",
   "status": "provisioning"
 }
@@ -111,7 +111,7 @@ Response:
 ### 2. Check Instance Status
 
 ```bash
-curl http://localhost:3000/admin/instances/union-2574af3733dd26f5
+curl http://localhost:3000/admin/instances/instance-2574af3733dd26f5
 ```
 
 Wait until `status: "ready"` before creating organisations.
@@ -119,7 +119,7 @@ Wait until `status: "ready"` before creating organisations.
 ### 3. Create an Organisation
 
 ```bash
-curl -X POST http://localhost:3000/instances/union-2574af3733dd26f5/organisations \
+curl -X POST http://localhost:3000/instances/instance-2574af3733dd26f5/organisations \
   -H "Content-Type: application/json" \
   -d '{"name":"Robotics Team"}'
 ```
@@ -127,7 +127,7 @@ curl -X POST http://localhost:3000/instances/union-2574af3733dd26f5/organisation
 ### 4. Add a Password
 
 ```bash
-curl -X POST http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords \
+curl -X POST http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords \
   -H "Content-Type: application/json" \
   -d '{"name":"Slack Workspace","value":"super-secret-password"}'
 ```
@@ -135,7 +135,7 @@ curl -X POST http://localhost:3000/instances/union-2574af3733dd26f5/organisation
 ### 5. List Passwords
 
 ```bash
-curl http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords
+curl http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords
 ```
 
 ## Architecture
@@ -144,8 +144,8 @@ curl http://localhost:3000/instances/union-2574af3733dd26f5/organisations/societ
 ┌─────────────────────────────────────┐
 │   Platform API (Proprietary)       │
 └─────────────┬───────────────────────┘
-              │ HTTP
-              ▼
+               │ HTTP
+               ▼
 ┌─────────────────────────────────────┐
 │      Keyforge API (GPLv3)           │
 │  ┌──────────────────────────────┐   │
@@ -160,18 +160,18 @@ curl http://localhost:3000/instances/union-2574af3733dd26f5/organisations/societ
 │  │ VaultWarden Client           │   │
 │  └──────────────────────────────┘   │
 └─────────────┬───────────────────────┘
-              │
-              ▼
+               │
+               ▼
 ┌─────────────────────────────────────┐
 │  Kubernetes Cluster                 │
 │  ┌─────────────────────────────┐    │
-│  │ Namespace: union-xxx        │    │
+│  │ Namespace: instance-xxx     │    │
 │  │  ├─ VaultWarden Pod         │    │
 │  │  ├─ PostgreSQL Pod          │    │
 │  │  └─ Persistent Volumes      │    │
 │  └─────────────────────────────┘    │
 │  ┌─────────────────────────────┐    │
-│  │ Namespace: union-yyy        │    │
+│  │ Namespace: instance-yyy     │    │
 │  │  ├─ VaultWarden Pod         │    │
 │  │  └─ ...                     │    │
 │  └─────────────────────────────┘    │
@@ -182,7 +182,7 @@ curl http://localhost:3000/instances/union-2574af3733dd26f5/organisations/societ
 
 ### Instance
 - One VaultWarden instance deployed to Kubernetes
-- One namespace per instance: `union-{id}`
+- One namespace per instance: `instance-{id}`
 - One PostgreSQL database per instance (containerized within the namespace)
 - Multiple organisations can exist within one VaultWarden instance
 
@@ -267,13 +267,13 @@ pnpm run db:migrate
 kubectl cluster-info
 
 # List deployed instances
-kubectl get namespaces | grep union
+kubectl get namespaces | grep instance
 
 # Check instance pods
-kubectl get pods -n union-<id>
+kubectl get pods -n instance-<id>
 
 # Port-forward to VaultWarden UI
-kubectl port-forward -n union-<id> svc/vaultwd-service 8080:80
+kubectl port-forward -n instance-<id> svc/vaultwd-service 8080:80
 # Visit http://localhost:8080
 ```
 
