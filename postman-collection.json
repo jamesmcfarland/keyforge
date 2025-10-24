@@ -1,0 +1,376 @@
+{
+  "info": {
+    "name": "Keyforge API",
+    "description": "Multi-tenant VaultWarden management API for Kubernetes",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Root",
+      "item": [
+        {
+          "name": "Get API Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Returns basic API information"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin - Instances",
+      "item": [
+        {
+          "name": "Create Instance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"production-environment\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/instances",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "instances"]
+            },
+            "description": "Provisions a new VaultWarden instance in Kubernetes (async - returns 202)"
+          },
+          "response": []
+        },
+        {
+          "name": "List All Instances",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/instances",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "instances"]
+            },
+            "description": "Returns all instances"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Instance Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/instances/{{instance_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "instances", "{{instance_id}}"]
+            },
+            "description": "Returns details for a specific instance including status"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Instance",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/instances/{{instance_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "instances", "{{instance_id}}"]
+            },
+            "description": "Deletes the instance's Kubernetes namespace and all associated resources"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin - Deployments",
+      "item": [
+        {
+          "name": "List All Deployments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/deployments",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "deployments"]
+            },
+            "description": "Returns all deployments (same as instances list)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Deployment Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/deployments/{{instance_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "deployments", "{{instance_id}}"]
+            },
+            "description": "Returns detailed information about a deployment including organisations and events"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Deployment Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/deployments/{{instance_id}}/events",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "deployments", "{{instance_id}}", "events"]
+            },
+            "description": "Returns all events for a deployment"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Deployment Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/deployments/{{instance_id}}/logs?level=info&page=1&limit=100",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "deployments", "{{instance_id}}", "logs"],
+              "query": [
+                {
+                  "key": "level",
+                  "value": "info",
+                  "disabled": false
+                },
+                {
+                  "key": "since",
+                  "value": "{{timestamp}}",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "100",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Returns logs for a deployment with pagination and filtering"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Organisations",
+      "item": [
+        {
+          "name": "Create Organisation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"engineering-team\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/instances/{{instance_id}}/organisations",
+              "host": ["{{base_url}}"],
+              "path": ["instances", "{{instance_id}}", "organisations"]
+            },
+            "description": "Creates a new organisation within an instance (returns 201)"
+          },
+          "response": []
+        },
+        {
+          "name": "List Organisations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/instances/{{instance_id}}/organisations",
+              "host": ["{{base_url}}"],
+              "path": ["instances", "{{instance_id}}", "organisations"]
+            },
+            "description": "Returns all organisations within an instance"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Organisation Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/instances/{{instance_id}}/organisations/{{organisation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["instances", "{{instance_id}}", "organisations", "{{organisation_id}}"]
+            },
+            "description": "Returns details for a specific organisation"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Passwords",
+      "item": [
+        {
+          "name": "Create Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"database-password\",\n  \"password\": \"super-secret-123\",\n  \"username\": \"db_user\",\n  \"totp\": \"\",\n  \"uris\": [\"postgresql://localhost:5432\"],\n  \"notes\": \"Production database credentials\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/instances/{{instance_id}}/organisations/{{organisation_id}}/passwords",
+              "host": ["{{base_url}}"],
+              "path": ["instances", "{{instance_id}}", "organisations", "{{organisation_id}}", "passwords"]
+            },
+            "description": "Creates a new password entry (cipher) in the organisation's VaultWarden organization (returns 201)"
+          },
+          "response": []
+        },
+        {
+          "name": "List Passwords",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/instances/{{instance_id}}/organisations/{{organisation_id}}/passwords",
+              "host": ["{{base_url}}"],
+              "path": ["instances", "{{instance_id}}", "organisations", "{{organisation_id}}", "passwords"]
+            },
+            "description": "Returns all passwords for an organisation"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Password Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/instances/{{instance_id}}/organisations/{{organisation_id}}/passwords/{{password_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["instances", "{{instance_id}}", "organisations", "{{organisation_id}}", "passwords", "{{password_id}}"]
+            },
+            "description": "Returns the full password details including the decrypted password value"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"updated-password-name\",\n  \"password\": \"new-super-secret-456\",\n  \"username\": \"updated_user\",\n  \"totp\": \"\",\n  \"uris\": [\"postgresql://updated-host:5432\"],\n  \"notes\": \"Updated production database credentials\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/instances/{{instance_id}}/organisations/{{organisation_id}}/passwords/{{password_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["instances", "{{instance_id}}", "organisations", "{{organisation_id}}", "passwords", "{{password_id}}"]
+            },
+            "description": "Updates the name and/or value of a password (returns 200)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Password",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/instances/{{instance_id}}/organisations/{{organisation_id}}/passwords/{{password_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["instances", "{{instance_id}}", "organisations", "{{organisation_id}}", "passwords", "{{password_id}}"]
+            },
+            "description": "Deletes a password entry from the organisation"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Check VaultWarden Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/vaultwd/{{instance_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["health", "vaultwd", "{{instance_id}}"]
+            },
+            "description": "Checks if the VaultWarden instance is healthy and responding"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "instance_id",
+      "value": "instance-2574af3733dd26f5",
+      "type": "string"
+    },
+    {
+      "key": "organisation_id",
+      "value": "organisation-e6557cc8e1656983",
+      "type": "string"
+    },
+    {
+      "key": "password_id",
+      "value": "pwd-657bbc9ee11296d0",
+      "type": "string"
+    },
+    {
+      "key": "timestamp",
+      "value": "1761318123092",
+      "type": "string"
+    }
+  ]
+}
