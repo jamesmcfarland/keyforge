@@ -37,5 +37,21 @@ services:
     extra_hosts:
       - "${KUBE_HOST:-host.docker.internal}:host-gateway"
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE: http://localhost:3000
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    working_dir: /app
+    command: pnpm run dev
+
 volumes:
   postgres_data:
