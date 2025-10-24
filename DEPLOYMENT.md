@@ -50,7 +50,7 @@ Keyforge production deployment consists of:
 
 1. **Frontend** - React SPA served as static files
 2. **API Server** - Node.js application managing deployments
-3. **PostgreSQL** - Metadata storage for unions, societies, passwords, and deployment tracking
+3. **PostgreSQL** - Metadata storage for instances, organisations, passwords, and deployment tracking
 4. **Kubernetes** - Target cluster for VaultWarden instances
 
 ---
@@ -619,7 +619,7 @@ app.use('*', rateLimiter({
 - ✅ Store securely in Kubernetes secrets
 - ✅ Never log admin tokens
 - ✅ Rotate tokens regularly
-- ✅ Use different tokens per union
+- ✅ Use different tokens per instance
 
 ### 5. Frontend Security
 
@@ -796,7 +796,7 @@ resources:
 ### Kubernetes Cluster Scaling
 
 - Enable cluster autoscaler
-- Add more nodes as unions grow
+- Add more nodes as instances grow
 - Use node pools for different workload types
 
 ---
@@ -813,7 +813,7 @@ resources:
 ### Failed Provisioning
 
 1. **Check deployment logs**: `GET /admin/deployments/{id}/logs`
-2. **Check Kubernetes events**: `kubectl get events -n {union-id}`
+2. **Check Kubernetes events**: `kubectl get events -n {instance-id}`
 3. **Verify cluster capacity**: `kubectl describe nodes`
 4. **Check helm chart**: `helm lint ./helm-chart`
 

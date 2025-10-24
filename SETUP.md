@@ -263,9 +263,9 @@ Expected output:
 --------+-------------------+-------+----------
  public | deployment_events | table | keyforge
  public | deployment_logs   | table | keyforge
+ public | instances         | table | keyforge
+ public | organisations     | table | keyforge
  public | passwords         | table | keyforge
- public | societies         | table | keyforge
- public | unions            | table | keyforge
 ```
 
 ## Kubernetes Configuration
