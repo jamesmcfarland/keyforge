@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Union, DeploymentDetail, DeploymentEventsResponse, DeploymentLogsResponse } from '../types'
+import type { Union, DeploymentDetail, DeploymentEventsResponse, DeploymentLogsResponse, CreateSocietyResponse, PasswordListResponse, PasswordWithValue, CreatePasswordResponse, CreatePasswordRequest } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000'
 
@@ -47,6 +47,31 @@ export const api = {
 
   createUnion: async (name: string): Promise<{ union_id: string; vaultwd_url: string; admin_token: string; status: string }> => {
     const response = await client.post('/admin/unions', { name })
+    return response.data
+  },
+
+  createSociety: async (unionId: string, name: string): Promise<CreateSocietyResponse> => {
+    const response = await client.post(`/unions/${unionId}/societies`, { name })
+    return response.data
+  },
+
+  getPasswords: async (unionId: string, societyId: string): Promise<PasswordListResponse> => {
+    const response = await client.get(`/unions/${unionId}/societies/${societyId}/passwords`)
+    return response.data
+  },
+
+  getPassword: async (unionId: string, societyId: string, passwordId: string): Promise<PasswordWithValue> => {
+    const response = await client.get(`/unions/${unionId}/societies/${societyId}/passwords/${passwordId}`)
+    return response.data
+  },
+
+  createPassword: async (unionId: string, societyId: string, data: CreatePasswordRequest): Promise<CreatePasswordResponse> => {
+    const response = await client.post(`/unions/${unionId}/societies/${societyId}/passwords`, data)
+    return response.data
+  },
+
+  deletePassword: async (unionId: string, societyId: string, passwordId: string): Promise<{ message: string }> => {
+    const response = await client.delete(`/unions/${unionId}/societies/${societyId}/passwords/${passwordId}`)
     return response.data
   }
 }

@@ -102,14 +102,24 @@ societies.post('/unions/:union_id/societies/:society_id/passwords', async (c) =>
     if (!body.name || body.name.trim().length === 0) {
       return c.json({ error: 'Password name is required' }, 400)
     }
-    if (!body.value || body.value.length === 0) {
+    if (!body.password || body.password.length === 0) {
       return c.json({ error: 'Password value is required' }, 400)
     }
 
     const passwordId = `pwd-${randomBytes(8).toString('hex')}`
 
     try {
-      const cipherId = await vaultwd.createCipher(union.vaultwd_url, society.vaultwd_user_token, society.vaultwd_org_id, body.name, body.value)
+      const cipherId = await vaultwd.createCipher(
+        union.vaultwd_url, 
+        society.vaultwd_user_token, 
+        society.vaultwd_org_id, 
+        body.name, 
+        body.password,
+        body.username,
+        body.totp,
+        body.uris,
+        body.notes
+      )
       
       const password: Password = {
         id: passwordId,
@@ -214,7 +224,11 @@ societies.get('/unions/:union_id/societies/:society_id/passwords/:password_id', 
       id: password.id,
       society_id: password.society_id,
       name: cipher.name,
-      value: cipher.password,
+      username: cipher.username,
+      password: cipher.password,
+      totp: cipher.totp,
+      uris: cipher.uris,
+      notes: cipher.notes,
       created_at: password.created_at
     })
   } catch (error) {
@@ -286,14 +300,18 @@ societies.put('/unions/:union_id/societies/:society_id/passwords/:password_id', 
 
     const body = await c.req.json<UpdatePasswordRequest>()
     
-    if (!body.name && !body.value) {
-      return c.json({ error: 'At least one of name or value is required' }, 400)
+    if (!body.name && !body.password && !body.username && !body.totp && !body.uris && !body.notes) {
+      return c.json({ error: 'At least one field is required' }, 400)
     }
 
     const cipher = await vaultwd.getCipher(union.vaultwd_url, society.vaultwd_user_token, password.vaultwd_cipher_id)
     
     const newName = body.name !== undefined ? body.name : cipher.name
-    const newValue = body.value !== undefined ? body.value : cipher.password
+    const newPassword = body.password !== undefined ? body.password : cipher.password
+    const newUsername = body.username !== undefined ? body.username : cipher.username
+    const newTotp = body.totp !== undefined ? body.totp : cipher.totp
+    const newUris = body.uris !== undefined ? body.uris : cipher.uris
+    const newNotes = body.notes !== undefined ? body.notes : cipher.notes
 
     await vaultwd.updateCipher(
       union.vaultwd_url,
@@ -301,14 +319,22 @@ societies.put('/unions/:union_id/societies/:society_id/passwords/:password_id', 
       password.vaultwd_cipher_id,
       society.vaultwd_org_id,
       newName,
-      newValue
+      newPassword,
+      newUsername,
+      newTotp,
+      newUris,
+      newNotes
     )
 
     return c.json({
       id: password.id,
       society_id: password.society_id,
       name: newName,
-      value: newValue,
+      username: newUsername,
+      password: newPassword,
+      totp: newTotp,
+      uris: newUris,
+      notes: newNotes,
       created_at: password.created_at
     })
   } catch (error) {

@@ -59,3 +59,50 @@ export interface DeploymentLogsResponse {
   page: number
   limit: number
 }
+
+export interface Password {
+  id: string
+  society_id: string
+  name: string
+  created_at: number
+}
+
+export interface PasswordWithValue extends Password {
+  username?: string
+  password: string
+  totp?: string
+  uris?: string[]
+  notes?: string
+}
+
+export interface PasswordListResponse {
+  society_id: string
+  passwords: Password[]
+}
+
+export interface CreateSocietyRequest {
+  name: string
+}
+
+export interface CreateSocietyResponse {
+  society_id: string
+  union_id: string
+  vaultwd_org_id: string
+  status: string
+}
+
+export interface CreatePasswordRequest {
+  name: string
+  username?: string
+  password: string
+  totp?: string
+  uris?: string[]
+  notes?: string
+}
+
+export interface CreatePasswordResponse {
+  password_id: string
+  society_id: string
+  name: string
+  created_at: number
+}

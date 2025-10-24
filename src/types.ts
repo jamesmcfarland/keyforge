@@ -43,7 +43,11 @@ export interface PasswordDetail {
   id: string
   society_id: string
   name: string
-  value: string
+  username?: string
+  password: string
+  totp?: string
+  uris?: string[]
+  notes?: string
   created_at: number
 }
 
@@ -78,12 +82,20 @@ export interface CreateSocietyResponse {
 
 export interface CreatePasswordRequest {
   name: string
-  value: string
+  username?: string
+  password: string
+  totp?: string
+  uris?: string[]
+  notes?: string
 }
 
 export interface UpdatePasswordRequest {
   name?: string
-  value?: string
+  username?: string
+  password?: string
+  totp?: string
+  uris?: string[]
+  notes?: string
 }
 
 export interface CreatePasswordResponse {

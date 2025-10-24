@@ -193,7 +193,11 @@ export async function createCipher(
   userToken: string,
   organizationId: string,
   name: string,
-  password: string
+  password: string,
+  username?: string,
+  totp?: string,
+  uris?: string[],
+  notes?: string
 ): Promise<string> {
   try {
     const response = await fetch(`${vaultwd_url}/api/ciphers`, {
@@ -207,12 +211,12 @@ export async function createCipher(
         organizationId,
         name,
         login: {
-          username: null,
+          username: username || null,
           password,
-          totp: null,
-          uris: null
+          totp: totp || null,
+          uris: uris ? uris.map(uri => ({ uri, match: null })) : null
         },
-        notes: null,
+        notes: notes || null,
         favorite: false,
         folderId: null,
         collectionIds: []
@@ -253,9 +257,9 @@ export async function getCiphers(
     const ciphers = data.data || []
     
     return ciphers.map((cipher: any) => ({
-      id: cipher.Id,
-      name: cipher.Name,
-      created_at: cipher.CreationDate ? new Date(cipher.CreationDate).getTime() : Date.now()
+      id: cipher.id,
+      name: cipher.name,
+      created_at: cipher.creationDate ? new Date(cipher.creationDate).getTime() : Date.now()
     }))
   } catch (error) {
     throw new Error(`Failed to fetch ciphers: ${error}`)
@@ -266,7 +270,7 @@ export async function getCipher(
   vaultwd_url: string,
   userToken: string,
   cipherId: string
-): Promise<{ id: string; name: string; password: string; created_at: number }> {
+): Promise<{ id: string; name: string; username?: string; password: string; totp?: string; uris?: string[]; notes?: string; created_at: number }> {
   try {
     const response = await fetch(`${vaultwd_url}/api/ciphers/${cipherId}`, {
       method: 'GET',
@@ -283,10 +287,14 @@ export async function getCipher(
     const cipher = await response.json()
     
     return {
-      id: cipher.Id,
-      name: cipher.Name,
-      password: cipher.Login?.Password || '',
-      created_at: cipher.CreationDate ? new Date(cipher.CreationDate).getTime() : Date.now()
+      id: cipher.id,
+      name: cipher.name,
+      username: cipher.login?.username || undefined,
+      password: cipher.login?.password || '',
+      totp: cipher.login?.totp || undefined,
+      uris: cipher.login?.uris ? cipher.login.uris.map((u: any) => u.uri) : undefined,
+      notes: cipher.notes || undefined,
+      created_at: cipher.creationDate ? new Date(cipher.creationDate).getTime() : Date.now()
     }
   } catch (error) {
     throw new Error(`Failed to fetch cipher: ${error}`)
@@ -299,7 +307,11 @@ export async function updateCipher(
   cipherId: string,
   organizationId: string,
   name: string,
-  password: string
+  password: string,
+  username?: string,
+  totp?: string,
+  uris?: string[],
+  notes?: string
 ): Promise<void> {
   try {
     const response = await fetch(`${vaultwd_url}/api/ciphers/${cipherId}`, {
@@ -313,12 +325,12 @@ export async function updateCipher(
         organizationId,
         name,
         login: {
-          username: null,
+          username: username || null,
           password,
-          totp: null,
-          uris: null
+          totp: totp || null,
+          uris: uris ? uris.map(uri => ({ uri, match: null })) : null
         },
-        notes: null,
+        notes: notes || null,
         favorite: false,
         folderId: null,
         collectionIds: []
