@@ -13,17 +13,17 @@ http://localhost:3000
 - [Authentication](#authentication)
 - [Key Concepts](#key-concepts)
 - [Admin Endpoints](#admin-endpoints)
-  - [Create Union](#create-union)
-  - [List Unions](#list-unions)
-  - [Get Union Details](#get-union-details)
-  - [Delete Union](#delete-union)
+  - [Create Instance](#create-instance)
+  - [List Instances](#list-instances)
+  - [Get Instance Details](#get-instance-details)
+  - [Delete Instance](#delete-instance)
   - [List Deployments](#list-deployments)
   - [Get Deployment Details](#get-deployment-details)
   - [Get Deployment Events](#get-deployment-events)
   - [Get Deployment Logs](#get-deployment-logs)
-- [Society Endpoints](#society-endpoints)
-  - [Create Society](#create-society)
-  - [Get Society Details](#get-society-details)
+- [Organisation Endpoints](#organisation-endpoints)
+  - [Create Organisation](#create-organisation)
+  - [Get Organisation Details](#get-organisation-details)
   - [Create Password](#create-password)
   - [List Passwords](#list-passwords)
   - [Get Password Details](#get-password-details)
@@ -47,18 +47,18 @@ http://localhost:3000
 
 ## Key Concepts
 
-- **Union**: A VaultWarden instance deployed to Kubernetes with isolated resources
-- **Society**: An organization within a union that can manage shared passwords
-- **Password**: An encrypted credential stored in a society's vault
-- **Deployment**: Alias for a union, used in monitoring endpoints
+- **Instance**: A VaultWarden instance deployed to Kubernetes with isolated resources
+- **Organisation**: An organization within an instance that can manage shared passwords
+- **Password**: An encrypted credential stored in an organisation's vault
+- **Deployment**: Alias for an instance, used in monitoring endpoints
 
 ---
 
 ## Admin Endpoints
 
-### Create Union
+### Create Instance
 
-**POST** `/admin/unions`
+**POST** `/admin/instances`
 
 Provisions a new VaultWarden instance in Kubernetes. Returns immediately with `provisioning` status.
 
@@ -74,7 +74,7 @@ Provisions a new VaultWarden instance in Kubernetes. Returns immediately with `p
 
 ```json
 {
-  "union_id": "union-2574af3733dd26f5",
+  "instance_id": "union-2574af3733dd26f5",
   "vaultwd_url": "http://vaultwd-service.union-2574af3733dd26f5.svc.cluster.local",
   "admin_token": "2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640",
   "status": "provisioning"
@@ -84,29 +84,29 @@ Provisions a new VaultWarden instance in Kubernetes. Returns immediately with `p
 **Notes:**
 - Provisioning is asynchronous and takes 2-5 minutes
 - Admin token is only returned once - store it securely
-- Check status via [Get Union Details](#get-union-details)
+- Check status via [Get Instance Details](#get-instance-details)
 
 **Example:**
 
 ```bash
-curl -X POST http://localhost:3000/admin/unions \
+curl -X POST http://localhost:3000/admin/instances \
   -H "Content-Type: application/json" \
   -d '{"name": "production-environment"}'
 ```
 
 ---
 
-### List Unions
+### List Instances
 
-**GET** `/admin/unions`
+**GET** `/admin/instances`
 
-Returns all unions.
+Returns all instances.
 
 **Response:** `200 OK`
 
 ```json
 {
-  "unions": [
+  "instances": [
     {
       "id": "union-2574af3733dd26f5",
       "name": "production-environment",
@@ -123,19 +123,19 @@ Returns all unions.
 **Example:**
 
 ```bash
-curl http://localhost:3000/admin/unions
+curl http://localhost:3000/admin/instances
 ```
 
 ---
 
-### Get Union Details
+### Get Instance Details
 
-**GET** `/admin/unions/{union_id}`
+**GET** `/admin/instances/{instance_id}`
 
-Returns details for a specific union.
+Returns details for a specific instance.
 
 **Path Parameters:**
-- `union_id` (string, required): Union identifier (e.g., `union-2574af3733dd26f5`)
+- `instance_id` (string, required): Instance identifier (e.g., `union-2574af3733dd26f5`)
 
 **Response:** `200 OK`
 
@@ -151,7 +151,7 @@ Returns details for a specific union.
 }
 ```
 
-**Union Status Values:**
+**Instance Status Values:**
 - `provisioning`: Kubernetes resources are being created
 - `ready`: VaultWarden is running and accessible
 - `failed`: Provisioning failed (see `error` field)
@@ -159,32 +159,32 @@ Returns details for a specific union.
 **Example:**
 
 ```bash
-curl http://localhost:3000/admin/unions/union-2574af3733dd26f5
+curl http://localhost:3000/admin/instances/union-2574af3733dd26f5
 ```
 
 ---
 
-### Delete Union
+### Delete Instance
 
-**DELETE** `/admin/unions/{union_id}`
+**DELETE** `/admin/instances/{instance_id}`
 
-Deletes a union's Kubernetes namespace and all associated resources.
+Deletes an instance's Kubernetes namespace and all associated resources.
 
 **Path Parameters:**
-- `union_id` (string, required): Union identifier
+- `instance_id` (string, required): Instance identifier
 
 **Response:** `200 OK`
 
 ```json
 {
-  "message": "Union deleted successfully"
+  "message": "Instance deleted successfully"
 }
 ```
 
 **Example:**
 
 ```bash
-curl -X DELETE http://localhost:3000/admin/unions/union-2574af3733dd26f5
+curl -X DELETE http://localhost:3000/admin/instances/union-2574af3733dd26f5
 ```
 
 ---
@@ -193,7 +193,7 @@ curl -X DELETE http://localhost:3000/admin/unions/union-2574af3733dd26f5
 
 **GET** `/admin/deployments`
 
-Returns all deployments (same as [List Unions](#list-unions)).
+Returns all deployments (same as [List Instances](#list-instances)).
 
 **Response:** `200 OK`
 
@@ -225,16 +225,16 @@ curl http://localhost:3000/admin/deployments
 
 **GET** `/admin/deployments/{deployment_id}`
 
-Returns detailed information about a deployment including societies and events.
+Returns detailed information about a deployment including organisations and events.
 
 **Path Parameters:**
-- `deployment_id` (string, required): Deployment identifier (union ID)
+- `deployment_id` (string, required): Deployment identifier (instance ID)
 
 **Response:** `200 OK`
 
 ```json
 {
-  "union": {
+  "instance": {
     "id": "union-2574af3733dd26f5",
     "name": "production-environment",
     "vaultwd_url": "http://vaultwd-service.union-2574af3733dd26f5.svc.cluster.local",
@@ -243,11 +243,11 @@ Returns detailed information about a deployment including societies and events.
     "error": null,
     "created_at": 1761318123092
   },
-  "societies": [
+  "organisations": [
     {
       "id": "society-e6557cc8e1656983",
       "name": "engineering-team",
-      "union_id": "union-2574af3733dd26f5",
+      "instance_id": "union-2574af3733dd26f5",
       "vaultwd_org_id": "42b2b981-ed49-48ce-9b3f-7ad6b53c2e46",
       "vaultwd_user_email": "society-e6557cc8e1656983@keyforge.local",
       "status": "created",
@@ -355,7 +355,7 @@ Returns logs for a deployment with pagination and filtering.
       "id": "log-1a2b3c4d5e6f7890",
       "deployment_id": "union-2574af3733dd26f5",
       "level": "info",
-      "message": "Installing helm chart for union union-2574af3733dd26f5",
+      "message": "Installing helm chart for instance union-2574af3733dd26f5",
       "created_at": 1761318123092
     },
     {
@@ -390,16 +390,16 @@ curl http://localhost:3000/admin/deployments/union-2574af3733dd26f5/logs?page=2&
 
 ---
 
-## Society Endpoints
+## Organisation Endpoints
 
-### Create Society
+### Create Organisation
 
-**POST** `/unions/{union_id}/societies`
+**POST** `/instances/{instance_id}/organisations`
 
-Creates a new organization (society) within a union.
+Creates a new organization (organisation) within an instance.
 
 **Path Parameters:**
-- `union_id` (string, required): Union identifier
+- `instance_id` (string, required): Instance identifier
 
 **Request Body:**
 
@@ -413,36 +413,36 @@ Creates a new organization (society) within a union.
 
 ```json
 {
-  "society_id": "society-e6557cc8e1656983",
-  "union_id": "union-2574af3733dd26f5",
+  "organisation_id": "society-e6557cc8e1656983",
+  "instance_id": "union-2574af3733dd26f5",
   "vaultwd_org_id": "42b2b981-ed49-48ce-9b3f-7ad6b53c2e46",
   "status": "created"
 }
 ```
 
 **Error Responses:**
-- `404`: Union not found
-- `503`: Union not ready yet (still provisioning)
+- `404`: Instance not found
+- `503`: Instance not ready yet (still provisioning)
 
 **Example:**
 
 ```bash
-curl -X POST http://localhost:3000/unions/union-2574af3733dd26f5/societies \
+curl -X POST http://localhost:3000/instances/union-2574af3733dd26f5/organisations \
   -H "Content-Type: application/json" \
   -d '{"name": "engineering-team"}'
 ```
 
 ---
 
-### Get Society Details
+### Get Organisation Details
 
-**GET** `/unions/{union_id}/societies/{society_id}`
+**GET** `/instances/{instance_id}/organisations/{organisation_id}`
 
-Returns details for a specific society.
+Returns details for a specific organisation.
 
 **Path Parameters:**
-- `union_id` (string, required): Union identifier
-- `society_id` (string, required): Society identifier
+- `instance_id` (string, required): Instance identifier
+- `organisation_id` (string, required): Organisation identifier
 
 **Response:** `200 OK`
 
@@ -450,7 +450,7 @@ Returns details for a specific society.
 {
   "id": "society-e6557cc8e1656983",
   "name": "engineering-team",
-  "union_id": "union-2574af3733dd26f5",
+  "instance_id": "union-2574af3733dd26f5",
   "vaultwd_org_id": "42b2b981-ed49-48ce-9b3f-7ad6b53c2e46",
   "vaultwd_user_email": "society-e6557cc8e1656983@keyforge.local",
   "vaultwd_user_token": "eyJhbGc...",
@@ -462,20 +462,20 @@ Returns details for a specific society.
 **Example:**
 
 ```bash
-curl http://localhost:3000/unions/union-2574af3733dd26f5/societies/society-e6557cc8e1656983
+curl http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983
 ```
 
 ---
 
 ### Create Password
 
-**POST** `/unions/{union_id}/societies/{society_id}/passwords`
+**POST** `/instances/{instance_id}/organisations/{organisation_id}/passwords`
 
-Creates a new password entry in the society's vault.
+Creates a new password entry in the organisation's vault.
 
 **Path Parameters:**
-- `union_id` (string, required): Union identifier
-- `society_id` (string, required): Society identifier
+- `instance_id` (string, required): Instance identifier
+- `organisation_id` (string, required): Organisation identifier
 
 **Request Body:**
 
@@ -491,7 +491,7 @@ Creates a new password entry in the society's vault.
 ```json
 {
   "password_id": "pwd-657bbc9ee11296d0",
-  "society_id": "society-e6557cc8e1656983",
+  "organisation_id": "society-e6557cc8e1656983",
   "name": "database-password",
   "created_at": 1761318165804
 }
@@ -500,7 +500,7 @@ Creates a new password entry in the society's vault.
 **Example:**
 
 ```bash
-curl -X POST http://localhost:3000/unions/union-2574af3733dd26f5/societies/society-e6557cc8e1656983/passwords \
+curl -X POST http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords \
   -H "Content-Type: application/json" \
   -d '{"name": "database-password", "value": "super-secret-123"}'
 ```
@@ -509,29 +509,29 @@ curl -X POST http://localhost:3000/unions/union-2574af3733dd26f5/societies/socie
 
 ### List Passwords
 
-**GET** `/unions/{union_id}/societies/{society_id}/passwords`
+**GET** `/instances/{instance_id}/organisations/{organisation_id}/passwords`
 
-Returns all passwords for a society (without values).
+Returns all passwords for an organisation (without values).
 
 **Path Parameters:**
-- `union_id` (string, required): Union identifier
-- `society_id` (string, required): Society identifier
+- `instance_id` (string, required): Instance identifier
+- `organisation_id` (string, required): Organisation identifier
 
 **Response:** `200 OK`
 
 ```json
 {
-  "society_id": "society-e6557cc8e1656983",
+  "organisation_id": "society-e6557cc8e1656983",
   "passwords": [
     {
       "id": "pwd-657bbc9ee11296d0",
-      "society_id": "society-e6557cc8e1656983",
+      "organisation_id": "society-e6557cc8e1656983",
       "name": "database-password",
       "created_at": 1761318165804
     },
     {
       "id": "pwd-789abc0e11296d12",
-      "society_id": "society-e6557cc8e1656983",
+      "organisation_id": "society-e6557cc8e1656983",
       "name": "api-key",
       "created_at": 1761318180000
     }
@@ -542,20 +542,20 @@ Returns all passwords for a society (without values).
 **Example:**
 
 ```bash
-curl http://localhost:3000/unions/union-2574af3733dd26f5/societies/society-e6557cc8e1656983/passwords
+curl http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords
 ```
 
 ---
 
 ### Get Password Details
 
-**GET** `/unions/{union_id}/societies/{society_id}/passwords/{password_id}`
+**GET** `/instances/{instance_id}/organisations/{organisation_id}/passwords/{password_id}`
 
 Returns full password details including the **decrypted password value**.
 
 **Path Parameters:**
-- `union_id` (string, required): Union identifier
-- `society_id` (string, required): Society identifier
+- `instance_id` (string, required): Instance identifier
+- `organisation_id` (string, required): Organisation identifier
 - `password_id` (string, required): Password identifier
 
 **Response:** `200 OK`
@@ -563,7 +563,7 @@ Returns full password details including the **decrypted password value**.
 ```json
 {
   "id": "pwd-657bbc9ee11296d0",
-  "society_id": "society-e6557cc8e1656983",
+  "organisation_id": "society-e6557cc8e1656983",
   "name": "database-password",
   "value": "super-secret-123",
   "created_at": 1761318165804
@@ -575,20 +575,20 @@ Returns full password details including the **decrypted password value**.
 **Example:**
 
 ```bash
-curl http://localhost:3000/unions/union-2574af3733dd26f5/societies/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0
+curl http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0
 ```
 
 ---
 
 ### Update Password
 
-**PUT** `/unions/{union_id}/societies/{society_id}/passwords/{password_id}`
+**PUT** `/instances/{instance_id}/organisations/{organisation_id}/passwords/{password_id}`
 
 Updates the name and/or value of a password.
 
 **Path Parameters:**
-- `union_id` (string, required): Union identifier
-- `society_id` (string, required): Society identifier
+- `instance_id` (string, required): Instance identifier
+- `organisation_id` (string, required): Organisation identifier
 - `password_id` (string, required): Password identifier
 
 **Request Body:**
@@ -607,7 +607,7 @@ At least one field is required:
 ```json
 {
   "id": "pwd-657bbc9ee11296d0",
-  "society_id": "society-e6557cc8e1656983",
+  "organisation_id": "society-e6557cc8e1656983",
   "name": "updated-password-name",
   "value": "new-super-secret-456",
   "created_at": 1761318165804
@@ -618,17 +618,17 @@ At least one field is required:
 
 ```bash
 # Update both name and value
-curl -X PUT http://localhost:3000/unions/union-2574af3733dd26f5/societies/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0 \
+curl -X PUT http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0 \
   -H "Content-Type: application/json" \
   -d '{"name": "updated-password-name", "value": "new-super-secret-456"}'
 
 # Update only the name
-curl -X PUT http://localhost:3000/unions/union-2574af3733dd26f5/societies/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0 \
+curl -X PUT http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0 \
   -H "Content-Type: application/json" \
   -d '{"name": "renamed-password"}'
 
 # Update only the value
-curl -X PUT http://localhost:3000/unions/union-2574af3733dd26f5/societies/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0 \
+curl -X PUT http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0 \
   -H "Content-Type: application/json" \
   -d '{"value": "rotated-password-123"}'
 ```
@@ -637,13 +637,13 @@ curl -X PUT http://localhost:3000/unions/union-2574af3733dd26f5/societies/societ
 
 ### Delete Password
 
-**DELETE** `/unions/{union_id}/societies/{society_id}/passwords/{password_id}`
+**DELETE** `/instances/{instance_id}/organisations/{organisation_id}/passwords/{password_id}`
 
-Deletes a password entry from the society.
+Deletes a password entry from the organisation.
 
 **Path Parameters:**
-- `union_id` (string, required): Union identifier
-- `society_id` (string, required): Society identifier
+- `instance_id` (string, required): Instance identifier
+- `organisation_id` (string, required): Organisation identifier
 - `password_id` (string, required): Password identifier
 
 **Response:** `200 OK`
@@ -657,7 +657,7 @@ Deletes a password entry from the society.
 **Example:**
 
 ```bash
-curl -X DELETE http://localhost:3000/unions/union-2574af3733dd26f5/societies/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0
+curl -X DELETE http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords/pwd-657bbc9ee11296d0
 ```
 
 ---
@@ -666,19 +666,19 @@ curl -X DELETE http://localhost:3000/unions/union-2574af3733dd26f5/societies/soc
 
 ### Check VaultWarden Health
 
-**GET** `/health/vaultwd/{union_id}`
+**GET** `/health/vaultwd/{instance_id}`
 
-Checks if the VaultWarden instance for a union is healthy and responding.
+Checks if the VaultWarden instance for an instance is healthy and responding.
 
 **Path Parameters:**
-- `union_id` (string, required): Union identifier
+- `instance_id` (string, required): Instance identifier
 
 **Response:** `200 OK` (Healthy)
 
 ```json
 {
   "status": "healthy",
-  "union_id": "union-2574af3733dd26f5",
+  "instance_id": "union-2574af3733dd26f5",
   "message": null,
   "checked_at": 1761318200000
 }
@@ -689,7 +689,7 @@ Checks if the VaultWarden instance for a union is healthy and responding.
 ```json
 {
   "status": "unhealthy",
-  "union_id": "union-2574af3733dd26f5",
+  "instance_id": "union-2574af3733dd26f5",
   "message": "VaultWarden returned status 503",
   "checked_at": 1761318200000
 }
@@ -723,8 +723,8 @@ All IDs follow specific patterns:
 
 | Type | Pattern | Example |
 |------|---------|---------|
-| Union ID | `union-[a-f0-9]{16}` | `union-2574af3733dd26f5` |
-| Society ID | `society-[a-f0-9]{16}` | `society-e6557cc8e1656983` |
+| Instance ID | `union-[a-f0-9]{16}` | `union-2574af3733dd26f5` |
+| Organisation ID | `society-[a-f0-9]{16}` | `society-e6557cc8e1656983` |
 | Password ID | `pwd-[a-f0-9]{16}` | `pwd-657bbc9ee11296d0` |
 | Event ID | `evt-[a-f0-9]{16}` | `evt-1a2b3c4d5e6f7890` |
 | Log ID | `log-[a-f0-9]{16}` | `log-1a2b3c4d5e6f7890` |
@@ -745,13 +745,13 @@ All errors follow this format:
 
 ```json
 {
-  "error": "Union not found"
+  "error": "Instance not found"
 }
 ```
 
 ```json
 {
-  "error": "Union is not ready yet. Current status: provisioning"
+  "error": "Instance is not ready yet. Current status: provisioning"
 }
 ```
 

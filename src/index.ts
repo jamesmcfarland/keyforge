@@ -4,7 +4,7 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import admin from './routes/admin.js'
 import health from './routes/health.js'
-import societies from './routes/societies.js'
+import organisations from './routes/organisations.js'
 import { errorHandler } from './middleware/error-handler.js'
 import { initializeDatabase } from './db/migrate.js'
 import { closeDatabase } from './db/client.js'
@@ -46,7 +46,7 @@ app.get('/', (c) => {
 
 app.route('/admin', admin)
 app.route('/health', health)
-app.route('/', societies)
+app.route('/', organisations)
 
 console.log(BANNER)
 

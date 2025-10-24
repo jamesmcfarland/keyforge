@@ -1,47 +1,47 @@
-export type UnionStatus = 'provisioning' | 'ready' | 'failed'
-export type SocietyStatus = 'pending' | 'created' | 'failed'
+export type InstanceStatus = 'provisioning' | 'ready' | 'failed'
+export type OrganisationStatus = 'pending' | 'created' | 'failed'
 export type HealthStatus = 'healthy' | 'unhealthy'
 export type DeploymentEventStatus = 'pending' | 'in_progress' | 'success' | 'failed'
 export type LogLevel = 'info' | 'warn' | 'error' | 'debug'
 
-export interface Union {
+export interface Instance {
   id: string
   name: string
   vaultwd_url: string
   vaultwd_admin_token: string
-  status: UnionStatus
+  status: InstanceStatus
   error?: string
   created_at: number
 }
 
-export interface Society {
+export interface Organisation {
   id: string
   name: string
-  union_id: string
+  instance_id: string
   vaultwd_org_id?: string
   vaultwd_user_email?: string
   vaultwd_user_token?: string
-  status: SocietyStatus
+  status: OrganisationStatus
   created_at: number
 }
 
 export interface Password {
   id: string
-  society_id: string
+  organisation_id: string
   vaultwd_cipher_id: string
   created_at: number
 }
 
 export interface PasswordWithData {
   id: string
-  society_id: string
+  organisation_id: string
   name: string
   created_at: number
 }
 
 export interface PasswordDetail {
   id: string
-  society_id: string
+  organisation_id: string
   name: string
   username?: string
   password: string
@@ -53,31 +53,31 @@ export interface PasswordDetail {
 
 export interface HealthCheck {
   status: HealthStatus
-  union_id: string
+  instance_id: string
   message?: string
   checked_at: number
 }
 
-export interface CreateUnionRequest {
+export interface CreateInstanceRequest {
   name: string
 }
 
-export interface CreateUnionResponse {
-  union_id: string
+export interface CreateInstanceResponse {
+  instance_id: string
   vaultwd_url: string
   admin_token: string
-  status: UnionStatus
+  status: InstanceStatus
 }
 
-export interface CreateSocietyRequest {
+export interface CreateOrganisationRequest {
   name: string
 }
 
-export interface CreateSocietyResponse {
-  society_id: string
-  union_id: string
+export interface CreateOrganisationResponse {
+  organisation_id: string
+  instance_id: string
   vaultwd_org_id?: string
-  status: SocietyStatus
+  status: OrganisationStatus
 }
 
 export interface CreatePasswordRequest {
@@ -100,13 +100,13 @@ export interface UpdatePasswordRequest {
 
 export interface CreatePasswordResponse {
   password_id: string
-  society_id: string
+  organisation_id: string
   name: string
   created_at: number
 }
 
 export interface PasswordListResponse {
-  society_id: string
+  organisation_id: string
   passwords: PasswordWithData[]
 }
 
@@ -128,8 +128,8 @@ export interface DeploymentLog {
 }
 
 export interface DeploymentDetail {
-  union: Union
-  societies: Society[]
+  instance: Instance
+  organisations: Organisation[]
   events: DeploymentEvent[]
 }
 

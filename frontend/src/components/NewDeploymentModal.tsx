@@ -12,7 +12,7 @@ export function NewDeploymentModal({ isOpen, onClose }: NewDeploymentModalProps)
   const queryClient = useQueryClient()
 
   const createMutation = useMutation({
-    mutationFn: (unionName: string) => api.createUnion(unionName),
+    mutationFn: (instanceName: string) => api.createInstance(instanceName),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deployments'] })
       setName('')
@@ -37,7 +37,7 @@ export function NewDeploymentModal({ isOpen, onClose }: NewDeploymentModalProps)
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-              Union Name
+              Instance Name
             </label>
             <input
               type="text"
@@ -45,7 +45,7 @@ export function NewDeploymentModal({ isOpen, onClose }: NewDeploymentModalProps)
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g. Engineering Union"
+              placeholder="e.g. Engineering Instance"
               required
               disabled={createMutation.isPending}
             />

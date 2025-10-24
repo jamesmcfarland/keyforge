@@ -1,26 +1,26 @@
-export type UnionStatus = 'provisioning' | 'ready' | 'failed'
-export type SocietyStatus = 'pending' | 'created' | 'failed'
+export type InstanceStatus = 'provisioning' | 'ready' | 'failed'
+export type OrganisationStatus = 'pending' | 'created' | 'failed'
 export type DeploymentEventStatus = 'pending' | 'in_progress' | 'success' | 'failed'
 export type LogLevel = 'info' | 'warn' | 'error' | 'debug'
 
-export interface Union {
+export interface Instance {
   id: string
   name: string
   vaultwd_url: string
   vaultwd_admin_token: string
-  status: UnionStatus
+  status: InstanceStatus
   error?: string
   created_at: number
 }
 
-export interface Society {
+export interface Organisation {
   id: string
   name: string
-  union_id: string
+  instance_id: string
   vaultwd_org_id?: string
   vaultwd_user_email?: string
   vaultwd_user_token?: string
-  status: SocietyStatus
+  status: OrganisationStatus
   created_at: number
 }
 
@@ -42,8 +42,8 @@ export interface DeploymentLog {
 }
 
 export interface DeploymentDetail {
-  union: Union
-  societies: Society[]
+  instance: Instance
+  organisations: Organisation[]
   events: DeploymentEvent[]
 }
 
@@ -62,7 +62,7 @@ export interface DeploymentLogsResponse {
 
 export interface Password {
   id: string
-  society_id: string
+  organisation_id: string
   name: string
   created_at: number
 }
@@ -76,17 +76,17 @@ export interface PasswordWithValue extends Password {
 }
 
 export interface PasswordListResponse {
-  society_id: string
+  organisation_id: string
   passwords: Password[]
 }
 
-export interface CreateSocietyRequest {
+export interface CreateOrganisationRequest {
   name: string
 }
 
-export interface CreateSocietyResponse {
-  society_id: string
-  union_id: string
+export interface CreateOrganisationResponse {
+  organisation_id: string
+  instance_id: string
   vaultwd_org_id: string
   status: string
 }
@@ -102,7 +102,7 @@ export interface CreatePasswordRequest {
 
 export interface CreatePasswordResponse {
   password_id: string
-  society_id: string
+  organisation_id: string
   name: string
   created_at: number
 }

@@ -6,8 +6,8 @@ import { NewPasswordModal } from '../components/NewPasswordModal'
 import { formatDistanceToNow } from 'date-fns'
 import * as OTPAuth from 'otpauth'
 
-export function SocietyDetail() {
-  const { unionId, societyId } = useParams<{ unionId: string; societyId: string }>()
+export function OrganisationDetail() {
+  const { instanceId, organisationId } = useParams<{ instanceId: string; organisationId: string }>()
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [selectedPassword, setSelectedPassword] = useState<string | null>(null)
   const [totpCode, setTotpCode] = useState<string | null>(null)
@@ -15,22 +15,22 @@ export function SocietyDetail() {
   const queryClient = useQueryClient()
 
   const { data: deployment } = useQuery({
-    queryKey: ['deployment', unionId],
-    queryFn: () => api.getDeployment(unionId!),
-    enabled: !!unionId
+    queryKey: ['deployment', instanceId],
+    queryFn: () => api.getDeployment(instanceId!),
+    enabled: !!instanceId
   })
 
   const { data: passwordsData, isLoading, error } = useQuery({
-    queryKey: ['passwords', unionId, societyId],
-    queryFn: () => api.getPasswords(unionId!, societyId!),
-    enabled: !!unionId && !!societyId,
+    queryKey: ['passwords', instanceId, organisationId],
+    queryFn: () => api.getPasswords(instanceId!, organisationId!),
+    enabled: !!instanceId && !!organisationId,
     refetchInterval: 5000
   })
 
   const { data: selectedPasswordData } = useQuery({
-    queryKey: ['password', unionId, societyId, selectedPassword],
-    queryFn: () => api.getPassword(unionId!, societyId!, selectedPassword!),
-    enabled: !!unionId && !!societyId && !!selectedPassword
+    queryKey: ['password', instanceId, organisationId, selectedPassword],
+    queryFn: () => api.getPassword(instanceId!, organisationId!, selectedPassword!),
+    enabled: !!instanceId && !!organisationId && !!selectedPassword
   })
 
   useEffect(() => {
@@ -66,16 +66,16 @@ export function SocietyDetail() {
   }, [selectedPasswordData?.totp])
 
   const deleteMutation = useMutation({
-    mutationFn: (passwordId: string) => api.deletePassword(unionId!, societyId!, passwordId),
+    mutationFn: (passwordId: string) => api.deletePassword(instanceId!, organisationId!, passwordId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['passwords', unionId, societyId] })
+      queryClient.invalidateQueries({ queryKey: ['passwords', instanceId, organisationId] })
       if (selectedPassword) {
         setSelectedPassword(null)
       }
     }
   })
 
-  const society = deployment?.societies.find(s => s.id === societyId)
+  const organisation = deployment?.organisations.find(o => o.id === organisationId)
 
   if (isLoading) {
     return (
@@ -85,7 +85,7 @@ export function SocietyDetail() {
     )
   }
 
-  if (error || !passwordsData || !society) {
+  if (error || !passwordsData || !organisation) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-red-600">Error loading passwords</div>
@@ -117,10 +117,10 @@ export function SocietyDetail() {
     <div className="container mx-auto p-6">
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <div className="mb-4">
-          <h1 className="text-3xl font-bold">{society.name}</h1>
-          <p className="text-sm text-gray-500 font-mono mt-1">{society.id}</p>
+          <h1 className="text-3xl font-bold">{organisation.name}</h1>
+          <p className="text-sm text-gray-500 font-mono mt-1">{organisation.id}</p>
           <p className="text-sm text-gray-600 mt-2">
-            Union: <span className="font-semibold">{deployment?.union.name}</span>
+            Instance: <span className="font-semibold">{deployment?.instance.name}</span>
           </p>
         </div>
       </div>
@@ -324,8 +324,8 @@ export function SocietyDetail() {
       <NewPasswordModal
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
-        unionId={unionId!}
-        societyId={societyId!}
+        instanceId={instanceId!}
+        organisationId={organisationId!}
       />
     </div>
   )

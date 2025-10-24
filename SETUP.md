@@ -32,8 +32,8 @@ Before starting, ensure you have all required software installed. See [PREREQUIS
 ## Database Setup
 
 Keyforge uses PostgreSQL for persistent storage. The database stores:
-- Union metadata (VaultWarden instances)
-- Society metadata (organizations)
+- Instance metadata (VaultWarden instances)
+- Organisation metadata (organizations)
 - Password references (actual passwords stored in VaultWarden)
 - Deployment events and logs
 
@@ -41,7 +41,7 @@ Keyforge uses PostgreSQL for persistent storage. The database stores:
 
 The application creates 5 tables on first startup:
 
-#### `unions`
+#### `instances`
 Stores VaultWarden instance metadata.
 
 | Column | Type | Description |
@@ -54,14 +54,14 @@ Stores VaultWarden instance metadata.
 | `error` | TEXT | Error message if status is `failed` |
 | `created_at` | TIMESTAMP | Creation timestamp |
 
-#### `societies`
-Stores organization metadata within unions.
+#### `organisations`
+Stores organization metadata within instances.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | VARCHAR(255) | Primary key, format: `society-{hex}` |
-| `name` | TEXT | Society name |
-| `union_id` | VARCHAR(255) | Foreign key → `unions.id` (CASCADE DELETE) |
+| `name` | TEXT | Organisation name |
+| `instance_id` | VARCHAR(255) | Foreign key → `instances.id` (CASCADE DELETE) |
 | `vaultwd_org_id` | TEXT | VaultWarden organization UUID |
 | `vaultwd_user_email` | TEXT | Service account email |
 | `vaultwd_user_token` | TEXT | Bearer token for API calls |
@@ -74,7 +74,7 @@ Stores password metadata (values stored in VaultWarden).
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | VARCHAR(255) | Primary key, format: `pwd-{hex}` |
-| `society_id` | VARCHAR(255) | Foreign key → `societies.id` (CASCADE DELETE) |
+| `organisation_id` | VARCHAR(255) | Foreign key → `organisations.id` (CASCADE DELETE) |
 | `vaultwd_cipher_id` | VARCHAR(255) | VaultWarden cipher UUID |
 | `created_at` | TIMESTAMP | Creation timestamp |
 
@@ -84,7 +84,7 @@ Tracks provisioning events for debugging.
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | VARCHAR(255) | Primary key |
-| `deployment_id` | VARCHAR(255) | Foreign key → `unions.id` (CASCADE DELETE) |
+| `deployment_id` | VARCHAR(255) | Foreign key → `instances.id` (CASCADE DELETE) |
 | `step` | VARCHAR(100) | Deployment step name |
 | `status` | VARCHAR(50) | `pending`, `in_progress`, `success`, `failed` |
 | `message` | TEXT | Event message |
@@ -96,7 +96,7 @@ Stores structured logs for deployments.
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | VARCHAR(255) | Primary key |
-| `deployment_id` | VARCHAR(255) | Foreign key → `unions.id` (CASCADE DELETE) |
+| `deployment_id` | VARCHAR(255) | Foreign key → `instances.id` (CASCADE DELETE) |
 | `level` | VARCHAR(20) | `info`, `warn`, `error`, `debug` |
 | `message` | TEXT | Log message |
 | `created_at` | TIMESTAMP | Log timestamp |
@@ -332,29 +332,29 @@ Expected response:
 }
 ```
 
-### 2. Create a Test Union
+### 2. Create a Test Instance
 
 ```bash
-# Create union
-curl -X POST http://localhost:3000/admin/unions \
+# Create instance
+curl -X POST http://localhost:3000/admin/instances \
   -H "Content-Type: application/json" \
-  -d '{"name":"Test Union"}'
+  -d '{"name":"Test Instance"}'
 
-# Save the union_id from response
-UNION_ID="union-xxxxxx"
+# Save the instance_id from response
+INSTANCE_ID="union-xxxxxx"
 
 # Check status (wait for "ready")
-curl http://localhost:3000/admin/unions/$UNION_ID
+curl http://localhost:3000/admin/instances/$INSTANCE_ID
 ```
 
 ### 3. Verify Kubernetes Resources
 
 ```bash
-# List union namespaces
+# List instance namespaces
 kubectl get namespaces | grep union
 
-# Check pods in union namespace
-kubectl get pods -n $UNION_ID
+# Check pods in instance namespace
+kubectl get pods -n $INSTANCE_ID
 
 # Expected pods:
 # - postgres-xxx (Running)
@@ -365,41 +365,41 @@ kubectl get pods -n $UNION_ID
 
 ```bash
 # Port-forward to VaultWarden
-kubectl port-forward -n $UNION_ID svc/vaultwd-service 8080:80
+kubectl port-forward -n $INSTANCE_ID svc/vaultwd-service 8080:80
 
 # Visit http://localhost:8080 in browser
 # You should see the VaultWarden web interface
 ```
 
-### 5. Test Society Creation
+### 5. Test Organisation Creation
 
 ```bash
-# Create society
-curl -X POST http://localhost:3000/unions/$UNION_ID/societies \
+# Create organisation
+curl -X POST http://localhost:3000/instances/$INSTANCE_ID/organisations \
   -H "Content-Type: application/json" \
-  -d '{"name":"Test Society"}'
+  -d '{"name":"Test Organisation"}'
 
-# Save society_id from response
-SOCIETY_ID="society-xxxxxx"
+# Save organisation_id from response
+ORGANISATION_ID="society-xxxxxx"
 
 # Verify
-curl http://localhost:3000/unions/$UNION_ID/societies/$SOCIETY_ID
+curl http://localhost:3000/instances/$INSTANCE_ID/organisations/$ORGANISATION_ID
 ```
 
 ### 6. Test Password Operations
 
 ```bash
 # Create password
-curl -X POST http://localhost:3000/unions/$UNION_ID/societies/$SOCIETY_ID/passwords \
+curl -X POST http://localhost:3000/instances/$INSTANCE_ID/organisations/$ORGANISATION_ID/passwords \
   -H "Content-Type: application/json" \
   -d '{"name":"Test Password","value":"secret123"}'
 
 # List passwords
-curl http://localhost:3000/unions/$UNION_ID/societies/$SOCIETY_ID/passwords
+curl http://localhost:3000/instances/$INSTANCE_ID/organisations/$ORGANISATION_ID/passwords
 
 # Get specific password (includes value)
 PASSWORD_ID="pwd-xxxxxx"
-curl http://localhost:3000/unions/$UNION_ID/societies/$SOCIETY_ID/passwords/$PASSWORD_ID
+curl http://localhost:3000/instances/$INSTANCE_ID/organisations/$ORGANISATION_ID/passwords/$PASSWORD_ID
 ```
 
 ## Troubleshooting
@@ -416,17 +416,17 @@ docker-compose logs -f api
 # Logs are output to console
 
 # Check database connection
-docker exec -it keyforge-postgres psql -U keyforge -c "SELECT COUNT(*) FROM unions;"
+docker exec -it keyforge-postgres psql -U keyforge -c "SELECT COUNT(*) FROM instances;"
 
 # Check Kubernetes access
 kubectl get namespaces
 kubectl cluster-info
 
 # View deployment events
-curl http://localhost:3000/admin/deployments/$UNION_ID/events
+curl http://localhost:3000/admin/deployments/$INSTANCE_ID/events
 
 # View deployment logs
-curl "http://localhost:3000/admin/deployments/$UNION_ID/logs?level=error"
+curl "http://localhost:3000/admin/deployments/$INSTANCE_ID/logs?level=error"
 ```
 
 ## Next Steps

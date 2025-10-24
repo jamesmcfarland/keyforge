@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Union, DeploymentDetail, DeploymentEventsResponse, DeploymentLogsResponse, CreateSocietyResponse, PasswordListResponse, PasswordWithValue, CreatePasswordResponse, CreatePasswordRequest } from '../types'
+import type { Instance, DeploymentDetail, DeploymentEventsResponse, DeploymentLogsResponse, CreateOrganisationResponse, PasswordListResponse, PasswordWithValue, CreatePasswordResponse, CreatePasswordRequest } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000'
 
@@ -11,7 +11,7 @@ const client = axios.create({
 })
 
 export const api = {
-  getDeployments: async (): Promise<{ deployments: Union[] }> => {
+  getDeployments: async (): Promise<{ deployments: Instance[] }> => {
     const response = await client.get('/admin/deployments')
     return response.data
   },
@@ -45,33 +45,33 @@ export const api = {
     return response.data
   },
 
-  createUnion: async (name: string): Promise<{ union_id: string; vaultwd_url: string; admin_token: string; status: string }> => {
-    const response = await client.post('/admin/unions', { name })
+  createInstance: async (name: string): Promise<{ instance_id: string; vaultwd_url: string; admin_token: string; status: string }> => {
+    const response = await client.post('/admin/instances', { name })
     return response.data
   },
 
-  createSociety: async (unionId: string, name: string): Promise<CreateSocietyResponse> => {
-    const response = await client.post(`/unions/${unionId}/societies`, { name })
+  createOrganisation: async (instanceId: string, name: string): Promise<CreateOrganisationResponse> => {
+    const response = await client.post(`/instances/${instanceId}/organisations`, { name })
     return response.data
   },
 
-  getPasswords: async (unionId: string, societyId: string): Promise<PasswordListResponse> => {
-    const response = await client.get(`/unions/${unionId}/societies/${societyId}/passwords`)
+  getPasswords: async (instanceId: string, organisationId: string): Promise<PasswordListResponse> => {
+    const response = await client.get(`/instances/${instanceId}/organisations/${organisationId}/passwords`)
     return response.data
   },
 
-  getPassword: async (unionId: string, societyId: string, passwordId: string): Promise<PasswordWithValue> => {
-    const response = await client.get(`/unions/${unionId}/societies/${societyId}/passwords/${passwordId}`)
+  getPassword: async (instanceId: string, organisationId: string, passwordId: string): Promise<PasswordWithValue> => {
+    const response = await client.get(`/instances/${instanceId}/organisations/${organisationId}/passwords/${passwordId}`)
     return response.data
   },
 
-  createPassword: async (unionId: string, societyId: string, data: CreatePasswordRequest): Promise<CreatePasswordResponse> => {
-    const response = await client.post(`/unions/${unionId}/societies/${societyId}/passwords`, data)
+  createPassword: async (instanceId: string, organisationId: string, data: CreatePasswordRequest): Promise<CreatePasswordResponse> => {
+    const response = await client.post(`/instances/${instanceId}/organisations/${organisationId}/passwords`, data)
     return response.data
   },
 
-  deletePassword: async (unionId: string, societyId: string, passwordId: string): Promise<{ message: string }> => {
-    const response = await client.delete(`/unions/${unionId}/societies/${societyId}/passwords/${passwordId}`)
+  deletePassword: async (instanceId: string, organisationId: string, passwordId: string): Promise<{ message: string }> => {
+    const response = await client.delete(`/instances/${instanceId}/organisations/${organisationId}/passwords/${passwordId}`)
     return response.data
   }
 }

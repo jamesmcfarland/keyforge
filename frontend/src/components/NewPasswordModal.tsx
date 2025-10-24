@@ -5,11 +5,11 @@ import { api } from '../api/client'
 interface NewPasswordModalProps {
   isOpen: boolean
   onClose: () => void
-  unionId: string
-  societyId: string
+  instanceId: string
+  organisationId: string
 }
 
-export function NewPasswordModal({ isOpen, onClose, unionId, societyId }: NewPasswordModalProps) {
+export function NewPasswordModal({ isOpen, onClose, instanceId, organisationId }: NewPasswordModalProps) {
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -21,7 +21,7 @@ export function NewPasswordModal({ isOpen, onClose, unionId, societyId }: NewPas
 
   const mutation = useMutation({
     mutationFn: async () => {
-      return api.createPassword(unionId, societyId, {
+      return api.createPassword(instanceId, organisationId, {
         name,
         username: username || undefined,
         password,
@@ -31,7 +31,7 @@ export function NewPasswordModal({ isOpen, onClose, unionId, societyId }: NewPas
       })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['passwords', unionId, societyId] })
+      queryClient.invalidateQueries({ queryKey: ['passwords', instanceId, organisationId] })
       setName('')
       setUsername('')
       setPassword('')

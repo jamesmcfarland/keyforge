@@ -1,19 +1,19 @@
 # Keyforge
 
-> Multi-tenant VaultWarden orchestration for university student organizations
+> Multi-tenant VaultWarden orchestration for organisations
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ## Overview
 
-Keyforge is an open-source API that provisions and manages isolated [VaultWarden](https://github.com/dani-garcia/vaultwarden) password manager instances on Kubernetes. Designed for university student unions, it enables each union to have its own VaultWarden deployment with multiple organizations (societies) for shared credential management.
+Keyforge is an open-source API that provisions and manages isolated [VaultWarden](https://github.com/dani-garcia/vaultwarden) password manager instances on Kubernetes. It enables each instance to have its own VaultWarden deployment with multiple organisations for shared credential management.
 
-**Use Case:** Students select their society, request passwords, and Keyforge routes them to the correct VaultWarden instance to access shared credentials (Slack logins, event management platforms, etc.).
+**Use Case:** Users select their organisation, request passwords, and Keyforge routes them to the correct VaultWarden instance to access shared credentials (Slack logins, event management platforms, etc.).
 
 ## Key Features
 
-- **Multi-tenant isolation**: Each union gets its own VaultWarden instance in a dedicated Kubernetes namespace
-- **Organization management**: Create societies (VaultWarden organizations) within each union
+- **Multi-tenant isolation**: Each instance gets its own VaultWarden deployment in a dedicated Kubernetes namespace
+- **Organization management**: Create organisations (VaultWarden organizations) within each instance
 - **Password orchestration**: Store and retrieve shared credentials via REST API
 - **Automatic provisioning**: Helm-based deployment of VaultWarden + PostgreSQL
 - **Secure by default**: Namespace isolation, encrypted passwords, admin token authentication
@@ -90,44 +90,44 @@ pnpm run dev
 
 ## Usage Example
 
-### 1. Create a Union (VaultWarden Instance)
+### 1. Create an Instance (VaultWarden Instance)
 
 ```bash
-curl -X POST http://localhost:3000/admin/unions \
+curl -X POST http://localhost:3000/admin/instances \
   -H "Content-Type: application/json" \
-  -d '{"name":"Engineering Union"}'
+  -d '{"name":"Engineering Team"}'
 ```
 
 Response:
 ```json
 {
-  "union_id": "union-2574af3733dd26f5",
+  "instance_id": "union-2574af3733dd26f5",
   "vaultwd_url": "http://vaultwd-service.union-2574af3733dd26f5.svc.cluster.local",
   "admin_token": "...",
   "status": "provisioning"
 }
 ```
 
-### 2. Check Union Status
+### 2. Check Instance Status
 
 ```bash
-curl http://localhost:3000/admin/unions/union-2574af3733dd26f5
+curl http://localhost:3000/admin/instances/union-2574af3733dd26f5
 ```
 
-Wait until `status: "ready"` before creating societies.
+Wait until `status: "ready"` before creating organisations.
 
-### 3. Create a Society (Organization)
+### 3. Create an Organisation
 
 ```bash
-curl -X POST http://localhost:3000/unions/union-2574af3733dd26f5/societies \
+curl -X POST http://localhost:3000/instances/union-2574af3733dd26f5/organisations \
   -H "Content-Type: application/json" \
-  -d '{"name":"Robotics Society"}'
+  -d '{"name":"Robotics Team"}'
 ```
 
 ### 4. Add a Password
 
 ```bash
-curl -X POST http://localhost:3000/unions/union-2574af3733dd26f5/societies/society-e6557cc8e1656983/passwords \
+curl -X POST http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords \
   -H "Content-Type: application/json" \
   -d '{"name":"Slack Workspace","value":"super-secret-password"}'
 ```
@@ -135,7 +135,7 @@ curl -X POST http://localhost:3000/unions/union-2574af3733dd26f5/societies/socie
 ### 5. List Passwords
 
 ```bash
-curl http://localhost:3000/unions/union-2574af3733dd26f5/societies/society-e6557cc8e1656983/passwords
+curl http://localhost:3000/instances/union-2574af3733dd26f5/organisations/society-e6557cc8e1656983/passwords
 ```
 
 ## Architecture
@@ -154,7 +154,7 @@ curl http://localhost:3000/unions/union-2574af3733dd26f5/societies/society-e6557
 │  └──────────────────────────────┘   │
 │  ┌──────────────────────────────┐   │
 │  │ Registry Service             │   │
-│  │ (Union/Society Lookup)       │   │
+│  │ (Instance/Organisation)      │   │
 │  └──────────────────────────────┘   │
 │  ┌──────────────────────────────┐   │
 │  │ VaultWarden Client           │   │
@@ -180,19 +180,19 @@ curl http://localhost:3000/unions/union-2574af3733dd26f5/societies/society-e6557
 
 ## Key Concepts
 
-### Union
+### Instance
 - One VaultWarden instance deployed to Kubernetes
-- One namespace per union: `union-{id}`
-- One PostgreSQL database per union (containerized within the namespace)
-- Multiple societies can exist within one union's VaultWarden
+- One namespace per instance: `union-{id}`
+- One PostgreSQL database per instance (containerized within the namespace)
+- Multiple organisations can exist within one VaultWarden instance
 
-### Society
-- A VaultWarden "Organization" within a Union's instance
-- Stores shared passwords for that society
+### Organisation
+- A VaultWarden "Organization" within an instance
+- Stores shared passwords for that organisation
 - Members can be added with different access levels
 
 ### Routing
-Request flow: `society_id` → lookup `union_id` + `org_id` → lookup `vaultwd_url` → HTTP call to correct VaultWarden instance
+Request flow: `organisation_id` → lookup `instance_id` + `org_id` → lookup `vaultwd_url` → HTTP call to correct VaultWarden instance
 
 ## Documentation
 
@@ -220,8 +220,8 @@ keyforge/
 │   ├── index.ts              # Main Hono app
 │   ├── types.ts              # TypeScript interfaces
 │   ├── routes/
-│   │   ├── admin.ts          # Union management & deployment endpoints
-│   │   ├── societies.ts      # Society & password management
+│   │   ├── admin.ts          # Instance management & deployment endpoints
+│   │   ├── organisations.ts  # Organisation & password management
 │   │   └── health.ts         # Health check endpoints
 │   ├── services/
 │   │   ├── vaultwd-client.ts # VaultWarden HTTP client
@@ -266,10 +266,10 @@ pnpm run db:migrate
 # Verify Kubernetes access
 kubectl cluster-info
 
-# List deployed unions
+# List deployed instances
 kubectl get namespaces | grep union
 
-# Check union pods
+# Check instance pods
 kubectl get pods -n union-<id>
 
 # Port-forward to VaultWarden UI
@@ -283,7 +283,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 ## Security
 
-- Each union's data is isolated at the Kubernetes namespace + database level
+- Each instance's data is isolated at the Kubernetes namespace + database level
 - Passwords are encrypted by VaultWarden using industry-standard encryption
 - Admin tokens use Argon2id hashing
 - No secrets are logged or exposed in API responses

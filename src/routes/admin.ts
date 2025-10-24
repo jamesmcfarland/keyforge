@@ -1,22 +1,22 @@
 import { Hono } from 'hono'
 import { randomBytes } from 'crypto'
 import argon2 from 'argon2'
-import type { CreateUnionRequest, CreateUnionResponse, Union, DeploymentEventsResponse, DeploymentLogsResponse } from '../types.js'
+import type { CreateInstanceRequest, CreateInstanceResponse, Instance, DeploymentEventsResponse, DeploymentLogsResponse } from '../types.js'
 import * as registry from '../services/registry.js'
 import * as k8s from '../services/k8s.js'
 import { getLogs } from '../services/deployment-tracker.js'
 
 const admin = new Hono()
 
-admin.post('/unions', async (c) => {
+admin.post('/instances', async (c) => {
   try {
-    const body = await c.req.json<CreateUnionRequest>()
+    const body = await c.req.json<CreateInstanceRequest>()
     
     if (!body.name || body.name.trim().length === 0) {
-      return c.json({ error: 'Union name is required' }, 400)
+      return c.json({ error: 'Instance name is required' }, 400)
     }
 
-    const unionId = `union-${randomBytes(8).toString('hex')}`
+    const instanceId = `instance-${randomBytes(8).toString('hex')}`
     const plainToken = randomBytes(32).toString('hex')
     const hashedToken = await argon2.hash(plainToken, {
       type: argon2.argon2id,
@@ -24,10 +24,10 @@ admin.post('/unions', async (c) => {
       timeCost: 3,
       parallelism: 4
     })
-    const vaultwd_url = `http://vaultwd-service.${unionId}.svc.cluster.local`
+    const vaultwd_url = `http://vaultwd-service.${instanceId}.svc.cluster.local`
 
-    const union: Union = {
-      id: unionId,
+    const instance: Instance = {
+      id: instanceId,
       name: body.name,
       vaultwd_url,
       vaultwd_admin_token: plainToken,
@@ -35,69 +35,69 @@ admin.post('/unions', async (c) => {
       created_at: Date.now()
     }
 
-    await registry.addUnion(union)
+    await registry.addInstance(instance)
 
-    k8s.provisionUnion(unionId, hashedToken)
+    k8s.provisionInstance(instanceId, hashedToken)
       .then(() => {
-        registry.updateUnionStatus(unionId, 'ready')
-        console.log(`Union ${unionId} provisioned successfully`)
+        registry.updateInstanceStatus(instanceId, 'ready')
+        console.log(`Instance ${instanceId} provisioned successfully`)
       })
       .catch((error) => {
-        registry.updateUnionStatus(unionId, 'failed', error.message)
-        console.error(`Failed to provision union ${unionId}:`, error)
+        registry.updateInstanceStatus(instanceId, 'failed', error.message)
+        console.error(`Failed to provision instance ${instanceId}:`, error)
       })
 
-    const response: CreateUnionResponse = {
-      union_id: union.id,
-      vaultwd_url: union.vaultwd_url,
-      admin_token: union.vaultwd_admin_token,
-      status: union.status
+    const response: CreateInstanceResponse = {
+      instance_id: instance.id,
+      vaultwd_url: instance.vaultwd_url,
+      admin_token: instance.vaultwd_admin_token,
+      status: instance.status
     }
 
     return c.json(response, 202)
   } catch (error) {
-    console.error('Error creating union:', error)
+    console.error('Error creating instance:', error)
     return c.json({ error: 'Internal server error' }, 500)
   }
 })
 
-admin.get('/unions/:id', async (c) => {
-  const unionId = c.req.param('id')
-  const union = await registry.getUnion(unionId)
+admin.get('/instances/:id', async (c) => {
+  const instanceId = c.req.param('id')
+  const instance = await registry.getInstance(instanceId)
 
-  if (!union) {
-    return c.json({ error: 'Union not found' }, 404)
+  if (!instance) {
+    return c.json({ error: 'Instance not found' }, 404)
   }
 
-  return c.json(union)
+  return c.json(instance)
 })
 
-admin.get('/unions', async (c) => {
-  const unions = await registry.getAllUnions()
-  return c.json({ unions })
+admin.get('/instances', async (c) => {
+  const instances = await registry.getAllInstances()
+  return c.json({ instances })
 })
 
-admin.delete('/unions/:id', async (c) => {
-  const unionId = c.req.param('id')
-  const union = await registry.getUnion(unionId)
+admin.delete('/instances/:id', async (c) => {
+  const instanceId = c.req.param('id')
+  const instance = await registry.getInstance(instanceId)
 
-  if (!union) {
-    return c.json({ error: 'Union not found' }, 404)
+  if (!instance) {
+    return c.json({ error: 'Instance not found' }, 404)
   }
 
   try {
-    await k8s.deleteUnion(unionId)
-    await registry.deleteUnion(unionId)
-    return c.json({ message: 'Union deleted successfully' })
+    await k8s.deleteInstance(instanceId)
+    await registry.deleteInstance(instanceId)
+    return c.json({ message: 'Instance deleted successfully' })
   } catch (error) {
-    console.error('Error deleting union:', error)
-    return c.json({ error: 'Failed to delete union' }, 500)
+    console.error('Error deleting instance:', error)
+    return c.json({ error: 'Failed to delete instance' }, 500)
   }
 })
 
 admin.get('/deployments', async (c) => {
-  const unions = await registry.getAllUnions()
-  return c.json({ deployments: unions })
+  const instances = await registry.getAllInstances()
+  return c.json({ deployments: instances })
 })
 
 admin.get('/deployments/:id', async (c) => {
@@ -113,9 +113,9 @@ admin.get('/deployments/:id', async (c) => {
 
 admin.get('/deployments/:id/events', async (c) => {
   const deploymentId = c.req.param('id')
-  const union = await registry.getUnion(deploymentId)
+  const instance = await registry.getInstance(deploymentId)
 
-  if (!union) {
+  if (!instance) {
     return c.json({ error: 'Deployment not found' }, 404)
   }
 
@@ -134,9 +134,9 @@ admin.get('/deployments/:id/events', async (c) => {
 
 admin.get('/deployments/:id/logs', async (c) => {
   const deploymentId = c.req.param('id')
-  const union = await registry.getUnion(deploymentId)
+  const instance = await registry.getInstance(deploymentId)
 
-  if (!union) {
+  if (!instance) {
     return c.json({ error: 'Deployment not found' }, 404)
   }
 

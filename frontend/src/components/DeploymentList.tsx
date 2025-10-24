@@ -4,9 +4,9 @@ import { formatDistanceToNow } from 'date-fns'
 import { useIsFetching } from '@tanstack/react-query'
 import { useState } from 'react'
 import { NewDeploymentModal } from './NewDeploymentModal'
-import type { Union } from '../types'
+import type { Instance } from '../types'
 
-const statusColors: Record<Union['status'], string> = {
+const statusColors: Record<Instance['status'], string> = {
   provisioning: 'bg-blue-100 text-blue-800',
   ready: 'bg-green-100 text-green-800',
   failed: 'bg-red-100 text-red-800'
