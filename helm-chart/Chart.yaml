@@ -1,0 +1,6 @@
+apiVersion: v2
+name: vaultwarden-union
+description: VaultWarden instance with PostgreSQL for a student union
+type: application
+version: 0.1.0
+appVersion: "1.0"

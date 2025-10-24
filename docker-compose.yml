@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: keyforge
+      POSTGRES_USER: keyforge
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-keyforge_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keyforge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://keyforge:${DB_PASSWORD:-keyforge_dev}@postgres:5432/keyforge
+      NODE_ENV: development
+      KUBECONFIG: ${KUBECONFIG:-/app/.kube/config}
+      KUBE_HOST: ${KUBE_HOST:-host.docker.internal}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ${HOME}/.kube/config:/app/.kube/config.orig:ro
+      - ./helm-chart:/app/helm-chart:ro
+    working_dir: /app
+    command: npm run dev
+    extra_hosts:
+      - "${KUBE_HOST:-host.docker.internal}:host-gateway"
+
+volumes:
+  postgres_data:

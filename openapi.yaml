@@ -1,0 +1,996 @@
+openapi: 3.1.0
+info:
+  title: Keyforge API
+  version: 0.1.0
+  description: |
+    Multi-tenant VaultWarden management API for Kubernetes.
+    
+    Keyforge provisions isolated VaultWarden instances (unions) in Kubernetes and manages
+    organizations (societies) with shared password vaults for teams.
+  contact:
+    name: Keyforge
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+tags:
+  - name: admin
+    description: Union (VaultWarden instance) management
+  - name: societies
+    description: Society (organization) and password management
+  - name: health
+    description: Health check endpoints
+
+paths:
+  /:
+    get:
+      summary: API root
+      description: Returns basic API information
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: Keyforge API
+                  version:
+                    type: string
+                    example: 0.1.0
+                  status:
+                    type: string
+                    example: running
+
+  /admin/unions:
+    post:
+      summary: Create a new union
+      description: |
+        Provisions a new VaultWarden instance in Kubernetes with its own namespace,
+        PostgreSQL database, and isolated resources. Returns immediately with
+        'provisioning' status - check union status endpoint for completion.
+      tags:
+        - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUnionRequest'
+      responses:
+        '202':
+          description: Union creation initiated (async provisioning)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUnionResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    get:
+      summary: List all unions
+      description: Returns all unions (VaultWarden instances)
+      tags:
+        - admin
+      responses:
+        '200':
+          description: List of unions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Union'
+
+  /admin/unions/{union_id}:
+    get:
+      summary: Get union details
+      description: Returns details for a specific union including status
+      tags:
+        - admin
+      parameters:
+        - $ref: '#/components/parameters/UnionId'
+      responses:
+        '200':
+          description: Union details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Union'
+        '404':
+          description: Union not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Delete a union
+      description: Deletes the union's Kubernetes namespace and all associated resources
+      tags:
+        - admin
+      parameters:
+        - $ref: '#/components/parameters/UnionId'
+      responses:
+        '200':
+          description: Union deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Union deleted successfully
+        '404':
+          description: Union not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /unions/{union_id}/societies:
+    post:
+      summary: Create a new society
+      description: |
+        Creates a new organization (society) within a union. This:
+        1. Registers a service account user in VaultWarden
+        2. Authenticates the user
+        3. Creates a VaultWarden organization
+        Organizations enable multi-user password sharing.
+      tags:
+        - societies
+      parameters:
+        - $ref: '#/components/parameters/UnionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSocietyRequest'
+      responses:
+        '201':
+          description: Society created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSocietyResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Union not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Union not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /unions/{union_id}/societies/{society_id}:
+    get:
+      summary: Get society details
+      description: Returns details for a specific society
+      tags:
+        - societies
+      parameters:
+        - $ref: '#/components/parameters/UnionId'
+        - $ref: '#/components/parameters/SocietyId'
+      responses:
+        '200':
+          description: Society details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Society'
+        '404':
+          description: Union or society not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /unions/{union_id}/societies/{society_id}/passwords:
+    post:
+      summary: Create a new password
+      description: |
+        Creates a new password entry (cipher) in the society's VaultWarden organization.
+        The password is stored encrypted and accessible to all organization members.
+      tags:
+        - societies
+      parameters:
+        - $ref: '#/components/parameters/UnionId'
+        - $ref: '#/components/parameters/SocietyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePasswordRequest'
+      responses:
+        '201':
+          description: Password created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePasswordResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Union or society not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Society not properly initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    get:
+      summary: List passwords
+      description: Returns all passwords for a society
+      tags:
+        - societies
+      parameters:
+        - $ref: '#/components/parameters/UnionId'
+        - $ref: '#/components/parameters/SocietyId'
+      responses:
+        '200':
+          description: List of passwords
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordListResponse'
+        '404':
+          description: Union or society not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Society not properly initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /unions/{union_id}/societies/{society_id}/passwords/{password_id}:
+    get:
+      summary: Get password details
+      description: Returns the full password details including the decrypted password value
+      tags:
+        - societies
+      parameters:
+        - $ref: '#/components/parameters/UnionId'
+        - $ref: '#/components/parameters/SocietyId'
+        - $ref: '#/components/parameters/PasswordId'
+      responses:
+        '200':
+          description: Password details with value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordDetail'
+        '404':
+          description: Union, society, or password not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Society not properly initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      summary: Update a password
+      description: Updates the name and/or value of a password
+      tags:
+        - societies
+      parameters:
+        - $ref: '#/components/parameters/UnionId'
+        - $ref: '#/components/parameters/SocietyId'
+        - $ref: '#/components/parameters/PasswordId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePasswordRequest'
+      responses:
+        '200':
+          description: Password updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordDetail'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Union, society, or password not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Society not properly initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Delete a password
+      description: Deletes a password entry from the society
+      tags:
+        - societies
+      parameters:
+        - $ref: '#/components/parameters/UnionId'
+        - $ref: '#/components/parameters/SocietyId'
+        - $ref: '#/components/parameters/PasswordId'
+      responses:
+        '200':
+          description: Password deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password deleted successfully
+        '404':
+          description: Union, society, or password not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Society not properly initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /health/vaultwd/{union_id}:
+    get:
+      summary: Check VaultWarden health
+      description: Checks if the VaultWarden instance for a union is healthy and responding
+      tags:
+        - health
+      parameters:
+        - $ref: '#/components/parameters/UnionId'
+      responses:
+        '200':
+          description: VaultWarden is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+        '404':
+          description: Union not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: VaultWarden is unhealthy or union not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+
+  /admin/deployments:
+    get:
+      summary: List all deployments
+      description: Returns all deployments (same as unions list)
+      tags:
+        - admin
+      responses:
+        '200':
+          description: List of deployments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deployments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Union'
+
+  /admin/deployments/{deployment_id}:
+    get:
+      summary: Get deployment details
+      description: Returns detailed information about a deployment including societies and events
+      tags:
+        - admin
+      parameters:
+        - name: deployment_id
+          in: path
+          required: true
+          description: Unique identifier for the deployment (union)
+          schema:
+            type: string
+            pattern: '^union-[a-f0-9]{16}$'
+            example: union-2574af3733dd26f5
+      responses:
+        '200':
+          description: Deployment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentDetail'
+        '404':
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/deployments/{deployment_id}/events:
+    get:
+      summary: Get deployment events
+      description: Returns all events for a deployment
+      tags:
+        - admin
+      parameters:
+        - name: deployment_id
+          in: path
+          required: true
+          description: Unique identifier for the deployment
+          schema:
+            type: string
+            pattern: '^union-[a-f0-9]{16}$'
+            example: union-2574af3733dd26f5
+      responses:
+        '200':
+          description: List of deployment events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentEventsResponse'
+        '404':
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/deployments/{deployment_id}/logs:
+    get:
+      summary: Get deployment logs
+      description: Returns logs for a deployment with pagination and filtering
+      tags:
+        - admin
+      parameters:
+        - name: deployment_id
+          in: path
+          required: true
+          description: Unique identifier for the deployment
+          schema:
+            type: string
+            pattern: '^union-[a-f0-9]{16}$'
+            example: union-2574af3733dd26f5
+        - name: level
+          in: query
+          required: false
+          description: Filter logs by level
+          schema:
+            type: string
+            enum: [info, warn, error, debug]
+        - name: since
+          in: query
+          required: false
+          description: Filter logs since timestamp (Unix milliseconds)
+          schema:
+            type: integer
+            format: int64
+        - name: page
+          in: query
+          required: false
+          description: Page number (default 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          description: Number of logs per page (default 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+      responses:
+        '200':
+          description: Paginated list of logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentLogsResponse'
+        '404':
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  parameters:
+    UnionId:
+      name: union_id
+      in: path
+      required: true
+      description: Unique identifier for the union
+      schema:
+        type: string
+        pattern: '^union-[a-f0-9]{16}$'
+        example: union-2574af3733dd26f5
+    
+    SocietyId:
+      name: society_id
+      in: path
+      required: true
+      description: Unique identifier for the society
+      schema:
+        type: string
+        pattern: '^society-[a-f0-9]{16}$'
+        example: society-e6557cc8e1656983
+    
+    PasswordId:
+      name: password_id
+      in: path
+      required: true
+      description: Unique identifier for the password
+      schema:
+        type: string
+        pattern: '^pwd-[a-f0-9]{16}$'
+        example: pwd-657bbc9ee11296d0
+
+  schemas:
+    CreateUnionRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Human-readable name for the union
+          example: production-environment
+
+    CreateUnionResponse:
+      type: object
+      properties:
+        union_id:
+          type: string
+          example: union-2574af3733dd26f5
+        vaultwd_url:
+          type: string
+          format: uri
+          example: http://vaultwd-service.union-2574af3733dd26f5.svc.cluster.local
+        admin_token:
+          type: string
+          description: Admin token for VaultWarden (store securely, only returned once)
+          example: 2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640
+        status:
+          $ref: '#/components/schemas/UnionStatus'
+
+    Union:
+      type: object
+      properties:
+        id:
+          type: string
+          example: union-2574af3733dd26f5
+        name:
+          type: string
+          example: production-environment
+        vaultwd_url:
+          type: string
+          format: uri
+          example: http://vaultwd-service.union-2574af3733dd26f5.svc.cluster.local
+        vaultwd_admin_token:
+          type: string
+          example: 2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640
+        status:
+          $ref: '#/components/schemas/UnionStatus'
+        error:
+          type: string
+          description: Error message if status is 'failed'
+        created_at:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds
+          example: 1761318123092
+
+    UnionStatus:
+      type: string
+      enum:
+        - provisioning
+        - ready
+        - failed
+      description: |
+        - provisioning: Kubernetes resources are being created
+        - ready: VaultWarden is running and accessible
+        - failed: Provisioning failed (see error field)
+
+    CreateSocietyRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Human-readable name for the society/organization
+          example: engineering-team
+
+    CreateSocietyResponse:
+      type: object
+      properties:
+        society_id:
+          type: string
+          example: society-e6557cc8e1656983
+        union_id:
+          type: string
+          example: union-2574af3733dd26f5
+        vaultwd_org_id:
+          type: string
+          format: uuid
+          description: VaultWarden organization UUID
+          example: 42b2b981-ed49-48ce-9b3f-7ad6b53c2e46
+        status:
+          $ref: '#/components/schemas/SocietyStatus'
+
+    Society:
+      type: object
+      properties:
+        id:
+          type: string
+          example: society-e6557cc8e1656983
+        name:
+          type: string
+          example: engineering-team
+        union_id:
+          type: string
+          example: union-2574af3733dd26f5
+        vaultwd_org_id:
+          type: string
+          format: uuid
+          example: 42b2b981-ed49-48ce-9b3f-7ad6b53c2e46
+        vaultwd_user_email:
+          type: string
+          format: email
+          description: Service account email in VaultWarden
+          example: society-e6557cc8e1656983@keyforge.local
+        vaultwd_user_token:
+          type: string
+          description: Bearer token for VaultWarden API calls
+        status:
+          $ref: '#/components/schemas/SocietyStatus'
+        created_at:
+          type: integer
+          format: int64
+          example: 1761318156000
+
+    SocietyStatus:
+      type: string
+      enum:
+        - pending
+        - created
+        - failed
+      description: |
+        - pending: Society creation in progress
+        - created: Organization created successfully
+        - failed: Creation failed
+
+    CreatePasswordRequest:
+      type: object
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Name/label for the password entry
+          example: database-password
+        value:
+          type: string
+          minLength: 1
+          description: The actual password value (stored encrypted in VaultWarden)
+          example: super-secret-123
+
+    CreatePasswordResponse:
+      type: object
+      properties:
+        password_id:
+          type: string
+          example: pwd-657bbc9ee11296d0
+        society_id:
+          type: string
+          example: society-e6557cc8e1656983
+        name:
+          type: string
+          example: database-password
+        created_at:
+          type: integer
+          format: int64
+          example: 1761318165804
+
+    Password:
+      type: object
+      properties:
+        id:
+          type: string
+          example: pwd-657bbc9ee11296d0
+        society_id:
+          type: string
+          example: society-e6557cc8e1656983
+        name:
+          type: string
+          example: database-password
+        created_at:
+          type: integer
+          format: int64
+          example: 1761318165804
+
+    PasswordDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          example: pwd-657bbc9ee11296d0
+        society_id:
+          type: string
+          example: society-e6557cc8e1656983
+        name:
+          type: string
+          example: database-password
+        value:
+          type: string
+          description: The decrypted password value
+          example: super-secret-123
+        created_at:
+          type: integer
+          format: int64
+          example: 1761318165804
+
+    UpdatePasswordRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New name for the password (optional)
+          example: updated-password-name
+        value:
+          type: string
+          description: New password value (optional)
+          example: new-super-secret-456
+      minProperties: 1
+
+    PasswordListResponse:
+      type: object
+      properties:
+        society_id:
+          type: string
+          example: society-e6557cc8e1656983
+        passwords:
+          type: array
+          items:
+            $ref: '#/components/schemas/Password'
+
+    HealthCheck:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatus'
+        union_id:
+          type: string
+          example: union-2574af3733dd26f5
+        message:
+          type: string
+          description: Additional status message if unhealthy
+          example: VaultWarden returned status 503
+        checked_at:
+          type: integer
+          format: int64
+          example: 1761318200000
+
+    HealthStatus:
+      type: string
+      enum:
+        - healthy
+        - unhealthy
+
+    DeploymentDetail:
+      type: object
+      properties:
+        union:
+          $ref: '#/components/schemas/Union'
+        societies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Society'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeploymentEvent'
+
+    DeploymentEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          example: evt-1a2b3c4d5e6f7890
+        deployment_id:
+          type: string
+          example: union-2574af3733dd26f5
+        step:
+          type: string
+          example: create-namespace
+        status:
+          $ref: '#/components/schemas/DeploymentEventStatus'
+        message:
+          type: string
+          example: Namespace created successfully
+        created_at:
+          type: integer
+          format: int64
+          example: 1761318123092
+
+    DeploymentEventStatus:
+      type: string
+      enum:
+        - pending
+        - in_progress
+        - success
+        - failed
+
+    DeploymentEventsResponse:
+      type: object
+      properties:
+        deployment_id:
+          type: string
+          example: union-2574af3733dd26f5
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeploymentEvent'
+
+    DeploymentLog:
+      type: object
+      properties:
+        id:
+          type: string
+          example: log-1a2b3c4d5e6f7890
+        deployment_id:
+          type: string
+          example: union-2574af3733dd26f5
+        level:
+          $ref: '#/components/schemas/LogLevel'
+        message:
+          type: string
+          example: Starting PostgreSQL deployment
+        created_at:
+          type: integer
+          format: int64
+          example: 1761318123092
+
+    LogLevel:
+      type: string
+      enum:
+        - info
+        - warn
+        - error
+        - debug
+
+    DeploymentLogsResponse:
+      type: object
+      properties:
+        deployment_id:
+          type: string
+          example: union-2574af3733dd26f5
+        logs:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeploymentLog'
+        total:
+          type: integer
+          description: Total number of logs matching the filter
+          example: 250
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        limit:
+          type: integer
+          description: Number of logs per page
+          example: 100
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Union not found
