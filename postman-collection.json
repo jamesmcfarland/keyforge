@@ -15,8 +15,12 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/",
-              "host": ["{{base_url}}"],
-              "path": [""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                ""
+              ]
             },
             "description": "Returns basic API information"
           },
@@ -43,10 +47,28 @@
             },
             "url": {
               "raw": "{{base_url}}/admin/instances",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "instances"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "instances"
+              ]
             },
-            "description": "Provisions a new VaultWarden instance in Kubernetes (async - returns 202)"
+            "description": "Provisions a new VaultWarden instance in Kubernetes (async - returns 202)",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "var jsonData = pm.response.json();",
+                    "pm.environment.set(\"instance_id\", jsonData.instance_id);",
+                    "pm.collectionVariables.set(\"instance_id\", jsonData.instance_id);",
+                    "console.log(\"\u2705 Instance ID set: \" + jsonData.instance_id);"
+                  ]
+                }
+              }
+            ]
           },
           "response": []
         },
@@ -57,8 +79,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/admin/instances",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "instances"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "instances"
+              ]
             },
             "description": "Returns all instances"
           },
@@ -71,8 +98,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/admin/instances/{{instance_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "instances", "{{instance_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "instances",
+                "{{instance_id}}"
+              ]
             },
             "description": "Returns details for a specific instance including status"
           },
@@ -85,8 +118,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/admin/instances/{{instance_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "instances", "{{instance_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "instances",
+                "{{instance_id}}"
+              ]
             },
             "description": "Deletes the instance's Kubernetes namespace and all associated resources"
           },
@@ -104,8 +143,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/admin/deployments",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "deployments"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "deployments"
+              ]
             },
             "description": "Returns all deployments (same as instances list)"
           },
@@ -118,8 +162,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/admin/deployments/{{instance_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "deployments", "{{instance_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "deployments",
+                "{{instance_id}}"
+              ]
             },
             "description": "Returns detailed information about a deployment including organisations and events"
           },
@@ -132,8 +182,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/admin/deployments/{{instance_id}}/events",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "deployments", "{{instance_id}}", "events"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "deployments",
+                "{{instance_id}}",
+                "events"
+              ]
             },
             "description": "Returns all events for a deployment"
           },
@@ -146,8 +203,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/admin/deployments/{{instance_id}}/logs?level=info&page=1&limit=100",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "deployments", "{{instance_id}}", "logs"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "deployments",
+                "{{instance_id}}",
+                "logs"
+              ],
               "query": [
                 {
                   "key": "level",
@@ -196,10 +260,29 @@
             },
             "url": {
               "raw": "{{base_url}}/instances/{{instance_id}}/organisations",
-              "host": ["{{base_url}}"],
-              "path": ["instances", "{{instance_id}}", "organisations"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instances",
+                "{{instance_id}}",
+                "organisations"
+              ]
             },
-            "description": "Creates a new organisation within an instance (returns 201)"
+            "description": "Creates a new organisation within an instance (returns 201)",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "var jsonData = pm.response.json();",
+                    "pm.environment.set(\"organisation_id\", jsonData.organisation_id);",
+                    "pm.collectionVariables.set(\"organisation_id\", jsonData.organisation_id);",
+                    "console.log(\"\u2705 Organisation ID set: \" + jsonData.organisation_id);"
+                  ]
+                }
+              }
+            ]
           },
           "response": []
         },
@@ -210,8 +293,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/instances/{{instance_id}}/organisations",
-              "host": ["{{base_url}}"],
-              "path": ["instances", "{{instance_id}}", "organisations"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instances",
+                "{{instance_id}}",
+                "organisations"
+              ]
             },
             "description": "Returns all organisations within an instance"
           },
@@ -224,8 +313,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/instances/{{instance_id}}/organisations/{{organisation_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["instances", "{{instance_id}}", "organisations", "{{organisation_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instances",
+                "{{instance_id}}",
+                "organisations",
+                "{{organisation_id}}"
+              ]
             },
             "description": "Returns details for a specific organisation"
           },
@@ -252,10 +348,31 @@
             },
             "url": {
               "raw": "{{base_url}}/instances/{{instance_id}}/organisations/{{organisation_id}}/passwords",
-              "host": ["{{base_url}}"],
-              "path": ["instances", "{{instance_id}}", "organisations", "{{organisation_id}}", "passwords"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instances",
+                "{{instance_id}}",
+                "organisations",
+                "{{organisation_id}}",
+                "passwords"
+              ]
             },
-            "description": "Creates a new password entry (cipher) in the organisation's VaultWarden organization (returns 201)"
+            "description": "Creates a new password entry (cipher) in the organisation's VaultWarden organization (returns 201)",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "var jsonData = pm.response.json();",
+                    "pm.environment.set(\"password_id\", jsonData.password_id);",
+                    "pm.collectionVariables.set(\"password_id\", jsonData.password_id);",
+                    "console.log(\"\u2705 Password ID set: \" + jsonData.password_id);"
+                  ]
+                }
+              }
+            ]
           },
           "response": []
         },
@@ -266,8 +383,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/instances/{{instance_id}}/organisations/{{organisation_id}}/passwords",
-              "host": ["{{base_url}}"],
-              "path": ["instances", "{{instance_id}}", "organisations", "{{organisation_id}}", "passwords"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instances",
+                "{{instance_id}}",
+                "organisations",
+                "{{organisation_id}}",
+                "passwords"
+              ]
             },
             "description": "Returns all passwords for an organisation"
           },
@@ -280,8 +405,17 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/instances/{{instance_id}}/organisations/{{organisation_id}}/passwords/{{password_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["instances", "{{instance_id}}", "organisations", "{{organisation_id}}", "passwords", "{{password_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instances",
+                "{{instance_id}}",
+                "organisations",
+                "{{organisation_id}}",
+                "passwords",
+                "{{password_id}}"
+              ]
             },
             "description": "Returns the full password details including the decrypted password value"
           },
@@ -303,8 +437,17 @@
             },
             "url": {
               "raw": "{{base_url}}/instances/{{instance_id}}/organisations/{{organisation_id}}/passwords/{{password_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["instances", "{{instance_id}}", "organisations", "{{organisation_id}}", "passwords", "{{password_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instances",
+                "{{instance_id}}",
+                "organisations",
+                "{{organisation_id}}",
+                "passwords",
+                "{{password_id}}"
+              ]
             },
             "description": "Updates the name and/or value of a password (returns 200)"
           },
@@ -317,8 +460,17 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/instances/{{instance_id}}/organisations/{{organisation_id}}/passwords/{{password_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["instances", "{{instance_id}}", "organisations", "{{organisation_id}}", "passwords", "{{password_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "instances",
+                "{{instance_id}}",
+                "organisations",
+                "{{organisation_id}}",
+                "passwords",
+                "{{password_id}}"
+              ]
             },
             "description": "Deletes a password entry from the organisation"
           },
@@ -336,8 +488,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/health/vaultwd/{{instance_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["health", "vaultwd", "{{instance_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "vaultwd",
+                "{{instance_id}}"
+              ]
             },
             "description": "Checks if the VaultWarden instance is healthy and responding"
           },
