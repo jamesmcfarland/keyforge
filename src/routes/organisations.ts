@@ -66,16 +66,33 @@ organisations.post('/instances/:instance_id/organisations', async (c) => {
   }
 })
 
-organisations.get('/instances/:instance_id/organisations/:organisation_id', async (c) => {
-  const organisationId = c.req.param('organisation_id')
+organisations.get('/instances/:instance_id/organisations', async (c) => {
   const instanceId = c.req.param('instance_id')
-  const organisation = await registry.getOrganisation(organisationId)
+  const instance = await registry.getInstance(instanceId)
 
-  if (!organisation || organisation.instance_id !== instanceId) {
-    return c.json({ error: 'Organisation not found' }, 404)
+  if (!instance) {
+    return c.json({ error: 'Instance not found' }, 404)
   }
 
-  return c.json(organisation)
+  try {
+    const organisations = await registry.getOrganisationsByInstance(instanceId)
+    return c.json({ organisations })
+  } catch (error) {
+    console.error('Error fetching organisations:', error)
+    return c.json({ error: 'Failed to fetch organisations' }, 500)
+  }
+})
+
+organisations.get('/instances/:instance_id/organisations/:organisation_id', async (c) => {
+   const organisationId = c.req.param('organisation_id')
+   const instanceId = c.req.param('instance_id')
+   const organisation = await registry.getOrganisation(organisationId)
+
+   if (!organisation || organisation.instance_id !== instanceId) {
+     return c.json({ error: 'Organisation not found' }, 404)
+   }
+
+   return c.json(organisation)
 })
 
 organisations.post('/instances/:instance_id/organisations/:organisation_id/passwords', async (c) => {
