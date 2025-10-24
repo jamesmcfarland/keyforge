@@ -7,32 +7,35 @@
 - Click **Import** → **File** → Select `postman-collection.json`
 - Collection "Keyforge API" appears in left sidebar
 
-### 2. Configure Variables
-Edit collection variables (right-click collection → Edit → Variables tab):
+### 2. Start Testing - Automatic Variable Population
 
-| Variable | Value |
-|----------|-------|
-| `base_url` | `http://localhost:3000` |
-| `instance_id` | Update after creating instance |
-| `organisation_id` | Update after creating organisation |
-| `password_id` | Update after creating password |
+The collection now **automatically extracts and sets variables** from POST responses:
 
-### 3. Start Testing
+✅ **Create Instance** → Auto-populates `{{instance_id}}`
+✅ **Create Organisation** → Auto-populates `{{organisation_id}}`
+✅ **Create Password** → Auto-populates `{{password_id}}`
 
-**Option A: Follow complete workflow**
+**No manual variable configuration needed!** Just follow the workflow:
+
 ```
 1. Root → Get API Info
 2. Admin Instances → Create Instance
+   → instance_id automatically set from response ✓
 3. Admin Instances → Get Instance Details (repeat until status="ready")
 4. Health → Check VaultWarden Health
 5. Organisations → Create Organisation
+   → organisation_id automatically set from response ✓
 6. Passwords → Create Password
+   → password_id automatically set from response ✓
 7. Continue with other operations...
 ```
 
-**Option B: Run individual tests**
-- Each endpoint is standalone and can be tested independently
-- Required IDs must be set in variables
+### 3. Advanced Configuration (Optional)
+
+To override defaults or use custom environments:
+- Right-click collection → Edit → Variables tab
+- Update `base_url` if needed (default: http://localhost:3000)
+- Auto-populated variables will update as you run endpoints
 
 ## Collection Structure
 
@@ -66,8 +69,9 @@ Keyforge API
 
 ## Key Features
 
+✅ **Auto-populated variables** - IDs automatically extracted from responses
 ✅ **17 pre-configured endpoints** - All API operations included
-✅ **Variable placeholders** - Reusable across requests
+✅ **Post-request scripts** - Streamlined testing workflow
 ✅ **Example request bodies** - Copy/modify for your use case
 ✅ **Organized by resource** - Easy to find and test by feature
 ✅ **Complete documentation** - See TESTING.md for workflows
@@ -75,19 +79,16 @@ Keyforge API
 ## Common Tasks
 
 ### Test Instance Creation Flow
-1. Create Instance → Copy instance_id
-2. Update `{{instance_id}}` variable
-3. Poll Get Instance Details until status="ready"
-4. Check Health confirms VaultWarden is running
+1. Create Instance (auto-sets `{{instance_id}}`)
+2. Poll Get Instance Details until status="ready"
+3. Check Health confirms VaultWarden is running
 
 ### Test Organisation & Passwords
 1. Ensure instance is "ready"
-2. Create Organisation → Copy organisation_id
-3. Update `{{organisation_id}}` variable
-4. Create Password → Copy password_id
-5. Update `{{password_id}}` variable
-6. Get Password Details to verify encryption
-7. Update/Delete as needed
+2. Create Organisation (auto-sets `{{organisation_id}}`)
+3. Create Password (auto-sets `{{password_id}}`)
+4. Get Password Details to verify encryption
+5. Update/Delete as needed
 
 ### Monitor Deployment
 1. After creating instance, check Deployment Details
