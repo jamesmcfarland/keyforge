@@ -76,9 +76,27 @@ export function verifyJWT(token: string, publicKeyPEM: string): JWTPayload | nul
     // Decode payload
     const payload = JSON.parse(base64UrlDecode(encodedPayload).toString('utf8')) as JWTPayload
 
-    // Check expiration
+    // Validate all required claims exist
+    if (!payload.sub || !payload.iat || !payload.exp || !payload.instanceId) {
+      return null
+    }
+
     const now = Math.floor(Date.now() / 1000)
-    if (payload.exp && payload.exp < now) {
+    
+    // Check that token was not issued in the future (RFC 7519 Section 4.1.6)
+    // Allow 30 seconds of clock skew for system time differences
+    const CLOCK_SKEW_SECONDS = 30
+    if (payload.iat > (now + CLOCK_SKEW_SECONDS)) {
+      return null
+    }
+
+    // Check expiration
+    if (payload.exp < now) {
+      return null
+    }
+
+    // Check that token expiration is after issuance (logical consistency)
+    if (payload.iat > payload.exp) {
       return null
     }
 
@@ -86,7 +104,7 @@ export function verifyJWT(token: string, publicKeyPEM: string): JWTPayload | nul
   } catch (error) {
     console.error('JWT verification error:', error)
     return null
-  }
+   }
 }
 
 /**
@@ -123,11 +141,29 @@ function base64UrlEncode(input: string | Buffer): string {
 
 /**
  * Base64 URL decode
+ * Includes validation to prevent DoS attacks from malformed input
  */
 function base64UrlDecode(input: string): Buffer {
-  let base64 = input.replace(/-/g, '+').replace(/_/g, '/')
-  while (base64.length % 4) {
-    base64 += '='
+  // Prevent DoS: limit input size to 10MB (JWT tokens should be much smaller)
+  const MAX_BASE64_SIZE = 10 * 1024 * 1024
+  if (input.length > MAX_BASE64_SIZE) {
+    throw new Error('Base64 input exceeds maximum allowed size')
   }
+
+  let base64 = input.replace(/-/g, '+').replace(/_/g, '/')
+  
+  // Add padding - but limit iterations to prevent infinite loops
+  let iterations = 0
+  const MAX_PADDING_ITERATIONS = 10
+  while (base64.length % 4 && iterations < MAX_PADDING_ITERATIONS) {
+    base64 += '='
+    iterations++
+  }
+
+  // If we hit max iterations without proper padding, reject
+  if (base64.length % 4 !== 0) {
+    throw new Error('Invalid base64 padding')
+  }
+
   return Buffer.from(base64, 'base64')
 }
