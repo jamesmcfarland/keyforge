@@ -26,13 +26,10 @@ admin.post('/instances', async (c) => {
       timeCost: 3,
       parallelism: 4
     })
-    const vaultwd_url = `http://vaultwd-service.${instanceId}.svc.cluster.local`
+     const vaultwd_url = `http://vaultwd-service.${instanceId}.svc.cluster.local`
 
-    // Generate ECC key pair for JWT authentication
-    const { privateKey, publicKey } = generateECCKeyPair()
-    
-    // Store public key for verification
-    await storeInstanceKey(instanceId, publicKey)
+     const { privateKey, publicKey } = generateECCKeyPair()
+     await storeInstanceKey(instanceId, publicKey)
 
     const instance: Instance = {
       id: instanceId,
@@ -55,13 +52,13 @@ admin.post('/instances', async (c) => {
         console.error(`Failed to provision instance ${instanceId}:`, error)
       })
 
-    const response = {
-      instance_id: instance.id,
-      vaultwd_url: instance.vaultwd_url,
-      admin_token: instance.vaultwd_admin_token,
-      jwt_private_key: privateKey, // ⚠️ Only sent once - client must save securely
-      status: instance.status
-    }
+     const response = {
+       instance_id: instance.id,
+       vaultwd_url: instance.vaultwd_url,
+       admin_token: instance.vaultwd_admin_token,
+       jwt_private_key: privateKey,
+       status: instance.status
+     }
 
     return c.json(response, 202)
   } catch (error) {

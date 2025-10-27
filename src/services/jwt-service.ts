@@ -69,25 +69,22 @@ export function verifyJWT(token: string, publicKeyPEM: string): JWTPayload | nul
       return null
     }
 
-    const [encodedHeader, encodedPayload, encodedSignature] = parts
-    const message = `${encodedHeader}.${encodedPayload}`
-    
-    // Verify signature
-    const publicKey = createPublicKey(publicKeyPEM)
-    const signature = base64UrlDecode(encodedSignature)
-    const isValid = verify('sha256', Buffer.from(message), publicKey, signature)
+     const [encodedHeader, encodedPayload, encodedSignature] = parts
+     const message = `${encodedHeader}.${encodedPayload}`
 
-    if (!isValid) {
-      return null
-    }
+     const publicKey = createPublicKey(publicKeyPEM)
+     const signature = base64UrlDecode(encodedSignature)
+     const isValid = verify('sha256', Buffer.from(message), publicKey, signature)
 
-    // Decode payload
-    const payload = JSON.parse(base64UrlDecode(encodedPayload).toString('utf8')) as JWTPayload
+     if (!isValid) {
+       return null
+     }
 
-    // Validate all required claims exist
-    if (!payload.sub || !payload.iat || !payload.exp || !payload.instanceId || !payload.jti) {
-      return null
-    }
+     const payload = JSON.parse(base64UrlDecode(encodedPayload).toString('utf8')) as JWTPayload
+
+     if (!payload.sub || !payload.iat || !payload.exp || !payload.instanceId || !payload.jti) {
+       return null
+     }
 
     const now = Math.floor(Date.now() / 1000)
     

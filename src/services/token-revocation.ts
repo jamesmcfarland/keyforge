@@ -49,14 +49,10 @@ export async function revokeToken(jti: string, instanceId: string, expiresAt: Da
 export async function cleanupExpiredRevokedTokens(): Promise<number> {
   try {
     const now = new Date()
-    // Drizzle-orm delete returns the number of affected rows
-    // For postgres driver, we need to execute the delete query
     await db
       .delete(revokedTokens)
       .where(lt(revokedTokens.expires_at, now))
     
-    // Return 0 since we can't easily get the count with drizzle-orm
-    // In production, you might want to enable RETURNING to count
     return 0
   } catch (error) {
     console.error('Error cleaning up expired revoked tokens:', error)

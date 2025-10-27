@@ -16,16 +16,13 @@ export function loadRootPublicKey(): string {
     throw new Error('ROOT_JWT_PUBLIC_KEY environment variable not set')
   }
 
-  // Decode from base64 if encoded
   let decoded: string
   try {
     decoded = Buffer.from(key, 'base64').toString('utf8')
-    // Verify it's a PEM format key
     if (!decoded.includes('BEGIN PUBLIC KEY')) {
       throw new Error('Invalid PEM format')
     }
   } catch {
-    // If not base64, assume it's already PEM format
     decoded = key
   }
 
