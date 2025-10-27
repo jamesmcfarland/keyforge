@@ -6,8 +6,11 @@ import admin from './routes/admin.js'
 import health from './routes/health.js'
 import organisations from './routes/organisations.js'
 import { errorHandler } from './middleware/error-handler.js'
+import { jwtAuth, requireAdmin } from './middleware/jwt-auth.js'
+import { auditMiddleware } from './middleware/audit-middleware.js'
 import { initializeDatabase } from './db/migrate.js'
 import { closeDatabase } from './db/client.js'
+import { loadRootPublicKey } from './services/key-registry.js'
 
 const BANNER = `
 ╔═══════════════════════════════════════════════════════════════════════╗
@@ -36,6 +39,9 @@ app.use('*', cors({
 
 app.use('*', errorHandler)
 
+// Audit middleware (logs all authenticated requests)
+app.use('*', auditMiddleware)
+
 app.get('/', (c) => {
   return c.json({
     name: 'Keyforge API',
@@ -44,11 +50,28 @@ app.get('/', (c) => {
   })
 })
 
+// Protected admin routes (require JWT with isAdmin: true)
+app.use('/admin/*', jwtAuth, requireAdmin)
 app.route('/admin', admin)
+
+// Health check (public)
 app.route('/health', health)
+
+// Organisation routes (require JWT with matching instanceId)
+app.use('/organisations/*', jwtAuth)
 app.route('/', organisations)
 
 console.log(BANNER)
+
+// Initialize root JWT public key
+try {
+  loadRootPublicKey()
+  console.log('✅ Root JWT public key loaded successfully')
+} catch (error) {
+  console.error('❌ Failed to load root JWT public key:', error)
+  console.error('   Make sure ROOT_JWT_PUBLIC_KEY environment variable is set')
+  process.exit(1)
+}
 
 await initializeDatabase()
 
