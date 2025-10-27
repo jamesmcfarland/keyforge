@@ -670,22 +670,26 @@ components:
           description: Human-readable name for the instance
           example: production-environment
 
-     CreateInstanceResponse:
-       type: object
-       properties:
-         instance_id:
-           type: string
-           example: instance-2574af3733dd26f5
-         vaultwd_url:
-           type: string
-           format: uri
-           example: http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local
-         admin_token:
-           type: string
-           description: Admin token for VaultWarden (store securely, only returned once)
-           example: 2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640
-         status:
-           $ref: '#/components/schemas/InstanceStatus'
+      CreateInstanceResponse:
+        type: object
+        properties:
+          instance_id:
+            type: string
+            example: instance-2574af3733dd26f5
+          vaultwd_url:
+            type: string
+            format: uri
+            example: http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local
+          admin_token:
+            type: string
+            description: Admin token for VaultWarden (store securely, only returned once)
+            example: 2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640
+          jwt_private_key:
+            type: string
+            description: ECC private key for JWT authentication (store securely, only returned once)
+            example: -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----
+          status:
+            $ref: '#/components/schemas/InstanceStatus'
 
      Instance:
        type: object
@@ -795,22 +799,40 @@ components:
         - created: Organization created successfully
         - failed: Creation failed
 
-    CreatePasswordRequest:
-      type: object
-      required:
-        - name
-        - password
-      properties:
-        name:
-          type: string
-          minLength: 1
-          description: Name/label for the password entry
-          example: database-password
-        password:
-          type: string
-          minLength: 1
-          description: The actual password value (stored encrypted in VaultWarden)
-          example: super-secret-123
+     CreatePasswordRequest:
+       type: object
+       required:
+         - name
+         - password
+       properties:
+         name:
+           type: string
+           minLength: 1
+           description: Name/label for the password entry
+           example: database-password
+         password:
+           type: string
+           minLength: 1
+           description: The actual password value (stored encrypted in VaultWarden)
+           example: super-secret-123
+         username:
+           type: string
+           description: Optional username associated with the password
+           example: db_user
+         totp:
+           type: string
+           description: Optional TOTP secret for two-factor authentication
+           example: JBSWY3DPEBLW64TMMQ======
+         uris:
+           type: array
+           items:
+             type: string
+           description: Optional list of URIs where this password is used
+           example: [https://database.example.com, https://backup.example.com]
+         notes:
+           type: string
+           description: Optional notes about the password
+           example: Production database credentials
 
      CreatePasswordResponse:
        type: object
