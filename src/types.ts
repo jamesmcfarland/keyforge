@@ -145,3 +145,41 @@ export interface DeploymentLogsResponse {
   page: number
   limit: number
 }
+
+export type AuditEventType = 
+  | 'admin_operation' 
+  | 'instance_access' 
+  | 'data_modification'
+  | 'auth_failure'
+  | 'key_rotation'
+
+export interface JWTPayload {
+  sub: string
+  iat: number
+  exp: number
+  instanceId: string
+  requestId: string
+  metadata: Record<string, any>
+  isAdmin?: boolean
+}
+
+export interface KeyPair {
+  id: string
+  instanceId: string | null
+  publicKey: string
+  createdAt: Date
+  revokedAt: Date | null
+}
+
+export interface AuditLog {
+  id: string
+  timestamp: Date
+  endpoint: string
+  method: string
+  instanceId: string
+  requestId: string
+  metadata: Record<string, any>
+  responseStatus: number
+  eventType: AuditEventType
+  createdAt: Date
+}
