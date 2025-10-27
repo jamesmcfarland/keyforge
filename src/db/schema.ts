@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, varchar, index } from 'drizzle-orm/pg-core'
 
 export const instances = pgTable('instances', {
   id: varchar('id', { length: 255 }).primaryKey(),
@@ -44,3 +44,28 @@ export const deploymentLogs = pgTable('deployment_logs', {
   message: text('message').notNull(),
   created_at: timestamp('created_at').notNull()
 })
+
+export const keyPairs = pgTable('key_pairs', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  instance_id: varchar('instance_id', { length: 255 }).references(() => instances.id, { onDelete: 'cascade' }),
+  public_key: text('public_key').notNull(),
+  created_at: timestamp('created_at').notNull().defaultNow(),
+  revoked_at: timestamp('revoked_at')
+})
+
+export const auditLogs = pgTable('audit_logs', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  timestamp: timestamp('timestamp').notNull(),
+  endpoint: text('endpoint').notNull(),
+  method: varchar('method', { length: 10 }).notNull(),
+  instance_id: varchar('instance_id', { length: 255 }).notNull(),
+  request_id: varchar('request_id', { length: 255 }).notNull(),
+  metadata: text('metadata'),
+  response_status: varchar('response_status', { length: 10 }).notNull(),
+  event_type: varchar('event_type', { length: 50 }).notNull(),
+  created_at: timestamp('created_at').notNull().defaultNow()
+}, (table) => ({
+  instanceIdIdx: index('idx_audit_logs_instance_id').on(table.instance_id),
+  timestampIdx: index('idx_audit_logs_timestamp').on(table.timestamp),
+  eventTypeIdx: index('idx_audit_logs_event_type').on(table.event_type)
+}))
