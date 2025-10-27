@@ -53,19 +53,29 @@ export const keyPairs = pgTable('key_pairs', {
   revoked_at: timestamp('revoked_at')
 })
 
-export const auditLogs = pgTable('audit_logs', {
-  id: varchar('id', { length: 255 }).primaryKey(),
-  timestamp: timestamp('timestamp').notNull(),
-  endpoint: text('endpoint').notNull(),
-  method: varchar('method', { length: 10 }).notNull(),
-  instance_id: varchar('instance_id', { length: 255 }).notNull(),
-  request_id: varchar('request_id', { length: 255 }).notNull(),
-  metadata: text('metadata'),
-  response_status: varchar('response_status', { length: 10 }).notNull(),
-  event_type: varchar('event_type', { length: 50 }).notNull(),
-  created_at: timestamp('created_at').notNull().defaultNow()
+export const revokedTokens = pgTable('revoked_tokens', {
+   jti: varchar('jti', { length: 255 }).primaryKey(),
+   instance_id: varchar('instance_id', { length: 255 }).notNull().references(() => instances.id, { onDelete: 'cascade' }),
+   revoked_at: timestamp('revoked_at').notNull().defaultNow(),
+   expires_at: timestamp('expires_at').notNull()
 }, (table) => ({
-  instanceIdIdx: index('idx_audit_logs_instance_id').on(table.instance_id),
-  timestampIdx: index('idx_audit_logs_timestamp').on(table.timestamp),
-  eventTypeIdx: index('idx_audit_logs_event_type').on(table.event_type)
+   instanceIdIdx: index('idx_revoked_tokens_instance_id').on(table.instance_id),
+   expiresAtIdx: index('idx_revoked_tokens_expires_at').on(table.expires_at)
+}))
+
+export const auditLogs = pgTable('audit_logs', {
+   id: varchar('id', { length: 255 }).primaryKey(),
+   timestamp: timestamp('timestamp').notNull(),
+   endpoint: text('endpoint').notNull(),
+   method: varchar('method', { length: 10 }).notNull(),
+   instance_id: varchar('instance_id', { length: 255 }).notNull(),
+   request_id: varchar('request_id', { length: 255 }).notNull(),
+   metadata: text('metadata'),
+   response_status: varchar('response_status', { length: 10 }).notNull(),
+   event_type: varchar('event_type', { length: 50 }).notNull(),
+   created_at: timestamp('created_at').notNull().defaultNow()
+}, (table) => ({
+   instanceIdIdx: index('idx_audit_logs_instance_id').on(table.instance_id),
+   timestampIdx: index('idx_audit_logs_timestamp').on(table.timestamp),
+   eventTypeIdx: index('idx_audit_logs_event_type').on(table.event_type)
 }))

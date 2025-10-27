@@ -1,5 +1,13 @@
-import { createPrivateKey, createPublicKey, generateKeyPairSync, sign, verify } from 'crypto'
+import { createPrivateKey, createPublicKey, generateKeyPairSync, randomBytes, sign, verify } from 'crypto'
 import type { JWTPayload } from '../types.js'
+
+/**
+ * Generate a unique JWT ID (jti) for token revocation support
+ * @returns Unique token ID
+ */
+export function generateJTI(): string {
+  return randomBytes(16).toString('hex')
+}
 
 /**
  * Generate an ECC P-256 key pair for JWT signing
@@ -77,7 +85,7 @@ export function verifyJWT(token: string, publicKeyPEM: string): JWTPayload | nul
     const payload = JSON.parse(base64UrlDecode(encodedPayload).toString('utf8')) as JWTPayload
 
     // Validate all required claims exist
-    if (!payload.sub || !payload.iat || !payload.exp || !payload.instanceId) {
+    if (!payload.sub || !payload.iat || !payload.exp || !payload.instanceId || !payload.jti) {
       return null
     }
 
@@ -105,6 +113,40 @@ export function verifyJWT(token: string, publicKeyPEM: string): JWTPayload | nul
     console.error('JWT verification error:', error)
     return null
    }
+}
+
+/**
+ * Verify a JWT token with a public key and check revocation status
+ * This is the full async verification that includes revocation checks
+ * @param token JWT token to verify
+ * @param publicKeyPEM Public key in PEM format
+ * @param instanceId Instance ID for revocation check
+ * @returns Decoded payload if valid, null if invalid
+ */
+export async function verifyJWTWithRevocation(
+  token: string,
+  publicKeyPEM: string,
+  instanceId: string
+): Promise<JWTPayload | null> {
+  // First do sync verification
+  const payload = verifyJWT(token, publicKeyPEM)
+  if (!payload) {
+    return null
+  }
+
+  // Then check revocation (async)
+  try {
+    const { isTokenRevoked } = await import('./token-revocation.js')
+    const revoked = await isTokenRevoked(payload.jti, instanceId)
+    if (revoked) {
+      return null
+    }
+  } catch (error) {
+    console.error('Error checking token revocation:', error)
+    return null
+  }
+
+  return payload
 }
 
 /**

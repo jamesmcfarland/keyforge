@@ -157,6 +157,7 @@ export interface JWTPayload {
   sub: string
   iat: number
   exp: number
+  jti: string
   instanceId: string
   requestId: string
   metadata: Record<string, any>
@@ -169,6 +170,13 @@ export interface KeyPair {
   publicKey: string
   createdAt: Date
   revokedAt: Date | null
+}
+
+export interface RevokedToken {
+  jti: string
+  instanceId: string
+  revokedAt: Date
+  expiresAt: Date
 }
 
 export interface AuditLog {
