@@ -39,9 +39,164 @@ http://localhost:3000
 
 ## Authentication
 
-**Current Version:** No authentication required (development mode).
+**JWT Authentication** is required for protected endpoints. The Keyforge API uses ECDSA P-256 (ES256) JWT tokens for authentication.
 
-**Future:** Authentication will be added before production deployment. Likely using API keys or JWT tokens.
+### Token Types
+
+- **Root Token**: For admin operations (instance management)
+  - `sub` = `"root"`
+  - `isAdmin` = `true`
+  - Signed with root private key
+
+- **Instance Token**: For instance-specific operations (organisations, passwords)
+  - `sub` = `"{instance_id}"`
+  - `instanceId` = `"{instance_id}"`
+  - Signed with instance private key
+
+### JWT Payload Structure
+
+```json
+{
+  "sub": "instance-2574af3733dd26f5",
+  "iat": 1234567890,
+  "exp": 1234567950,
+  "instanceId": "instance-2574af3733dd26f5",
+  "requestId": "uuid-v4",
+  "metadata": {
+    "client": "my-app",
+    "version": "1.0.0"
+  },
+  "isAdmin": false
+}
+```
+
+**Fields:**
+- `sub` - Subject: `"root"` or instance ID
+- `iat` - Issued at (Unix timestamp in seconds)
+- `exp` - Expiration (Unix timestamp in seconds, typically `iat + 60`)
+- `instanceId` - Instance identifier (required for instance tokens)
+- `requestId` - Unique request identifier (UUIDv4 recommended)
+- `metadata` - Client-defined custom data (optional)
+- `isAdmin` - Admin flag (only for root tokens, optional)
+
+### Token Expiration
+
+Tokens should be **short-lived** (60 seconds recommended):
+```javascript
+const iat = Math.floor(Date.now() / 1000)
+const exp = iat + 60
+```
+
+### Authorization Header
+
+Include the token in the `Authorization` header:
+
+```
+Authorization: Bearer <JWT_TOKEN>
+```
+
+### Public Key Distribution
+
+**Root Public Key:**
+- Configured via `ROOT_JWT_PUBLIC_KEY` environment variable
+- Base64-encoded PEM format
+- Loaded on server startup
+
+**Instance Public Keys:**
+- Generated when instance is created
+- Stored in database
+- Used to verify instance token signatures
+
+### Authentication Endpoints
+
+- **Admin routes** (`/admin/*`): Require root token with `isAdmin: true`
+- **Organisation routes** (`/organisations/*`): Require instance token with matching `instanceId`
+- **Health routes** (`/health/*`): Public, no authentication required
+
+### Error Responses
+
+Authentication errors return `401 Unauthorized`:
+
+```json
+{
+  "error": "No authorization token"
+}
+```
+
+```json
+{
+  "error": "Invalid token signature or expired"
+}
+```
+
+```json
+{
+  "error": "Unknown instance or invalid token"
+}
+```
+
+Authorization errors return `403 Forbidden`:
+
+```json
+{
+  "error": "Admin access required"
+}
+```
+
+```json
+{
+  "error": "Access denied to this instance"
+}
+```
+
+### JWT Signing Examples
+
+**Node.js with crypto module:**
+```javascript
+import { createPrivateKey, sign } from 'crypto'
+
+function signJWT(payload, privateKeyPem) {
+  const header = Buffer.from(JSON.stringify({ alg: 'ES256', typ: 'JWT' }))
+    .toString('base64')
+    .replace(/[+/=]/g, c => ({'+':'-','/':'_','=':''}[c]))
+  
+  const body = Buffer.from(JSON.stringify(payload))
+    .toString('base64')
+    .replace(/[+/=]/g, c => ({'+':'-','/':'_','=':''}[c]))
+  
+  const message = `${header}.${body}`
+  const privateKey = createPrivateKey(privateKeyPem)
+  const signature = sign('sha256', Buffer.from(message), privateKey)
+    .toString('base64')
+    .replace(/[+/=]/g, c => ({'+':'-','/':'_','=':''}[c]))
+  
+  return `${message}.${signature}`
+}
+
+// Usage
+const payload = {
+  sub: 'instance-abc123',
+  iat: Math.floor(Date.now() / 1000),
+  exp: Math.floor(Date.now() / 1000) + 60,
+  instanceId: 'instance-abc123',
+  requestId: crypto.randomUUID(),
+  metadata: {}
+}
+
+const token = signJWT(payload, privateKey)
+```
+
+### Audit Logging
+
+All authenticated requests are logged with:
+- Timestamp
+- Endpoint path and HTTP method
+- Instance ID and Request ID
+- Response status code
+- Event type categorization
+- Custom metadata
+
+Logs are stored in the `audit_logs` table and can be queried for compliance.
 
 ---
 
@@ -77,6 +232,7 @@ Provisions a new VaultWarden instance in Kubernetes. Returns immediately with `p
   "instance_id": "instance-2574af3733dd26f5",
   "vaultwd_url": "http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local",
   "admin_token": "2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640",
+  "jwt_private_key": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgVcB/UNPxalR9z...",
   "status": "provisioning"
 }
 ```
@@ -84,15 +240,23 @@ Provisions a new VaultWarden instance in Kubernetes. Returns immediately with `p
 **Notes:**
 - Provisioning is asynchronous and takes 2-5 minutes
 - Admin token is only returned once - store it securely
+- **JWT Private Key is only sent once - store it in your secrets manager or secure vault**
+- Use the JWT private key to sign all future requests to this instance
 - Check status via [Get Instance Details](#get-instance-details)
 
 **Example:**
 
 ```bash
+# Generate a root JWT token (client-side) and sign it with root private key
+JWT_TOKEN="eyJhbGc..." # Signed with root private key
+
 curl -X POST http://localhost:3000/admin/instances \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -d '{"name": "production-environment"}'
 ```
+
+**Note:** The private key is returned in the instance creation response. Clients must securely store and sign JWTs with this key.
 
 ---
 
@@ -401,6 +565,9 @@ Creates a new organization (organisation) within an instance.
 **Path Parameters:**
 - `instance_id` (string, required): Instance identifier
 
+**Headers:**
+- `Authorization` (string, required): Bearer token (JWT signed with instance private key)
+
 **Request Body:**
 
 ```json
@@ -427,8 +594,12 @@ Creates a new organization (organisation) within an instance.
 **Example:**
 
 ```bash
+# Sign JWT with instance private key
+JWT_TOKEN="eyJhbGc..." # Signed with instance private key from instance creation
+
 curl -X POST http://localhost:3000/instances/instance-2574af3733dd26f5/organisations \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -d '{"name": "engineering-team"}'
 ```
 
@@ -443,6 +614,9 @@ Returns details for a specific organisation.
 **Path Parameters:**
 - `instance_id` (string, required): Instance identifier
 - `organisation_id` (string, required): Organisation identifier
+
+**Headers:**
+- `Authorization` (string, required): Bearer token (JWT signed with instance private key)
 
 **Response:** `200 OK`
 
@@ -699,6 +873,66 @@ Checks if the VaultWarden instance for an instance is healthy and responding.
 
 ```bash
 curl http://localhost:3000/health/vaultwd/instance-2574af3733dd26f5
+```
+
+---
+
+## Audit Logging
+
+All authenticated API requests are automatically logged for compliance and security auditing. Audit logs are stored in the database and include:
+
+### Audit Log Fields
+
+- **timestamp** - When the request was made
+- **endpoint** - API path that was called
+- **method** - HTTP method (GET, POST, PUT, DELETE, etc.)
+- **instance_id** - The instance associated with the request
+- **request_id** - Unique identifier from JWT payload
+- **metadata** - Custom metadata from JWT payload
+- **response_status** - HTTP status code returned
+- **event_type** - Categorization of the request
+
+### Event Types
+
+- **admin_operation** - Instance creation, deletion, key rotation
+- **instance_access** - Reading instance data
+- **data_modification** - Creating or updating organisations/passwords
+- **auth_failure** - Failed authentication attempts
+- **key_rotation** - Key management operations
+
+### What is NOT Logged
+
+- Request/response bodies
+- Private keys or secrets
+- Password values
+- Personal Identifiable Information (PII)
+
+### Database Storage
+
+Audit logs are stored in the `audit_logs` table with indexes on:
+- `instance_id` - Query logs by instance
+- `timestamp` - Query logs by time range
+- `event_type` - Query logs by event category
+
+### Example Audit Log Entry
+
+```json
+{
+  "id": "audit-abc123def456",
+  "timestamp": "2025-01-15T10:30:45Z",
+  "endpoint": "/organisations/instance-abc123/organisations/org-xyz789/passwords",
+  "method": "POST",
+  "instance_id": "instance-abc123",
+  "request_id": "550e8400-e29b-41d4-a716-446655440000",
+  "metadata": {
+    "client": "my-automation-tool",
+    "version": "2.1.0",
+    "environment": "production"
+  },
+  "response_status": 201,
+  "event_type": "data_modification",
+  "created_at": "2025-01-15T10:30:45Z"
+}
 ```
 
 ---

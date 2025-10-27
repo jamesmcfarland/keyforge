@@ -17,6 +17,8 @@ Keyforge is an open-source API that provisions and manages isolated [VaultWarden
 - **Password orchestration**: Store and retrieve shared credentials via REST API
 - **Automatic provisioning**: Helm-based deployment of VaultWarden + PostgreSQL
 - **Secure by default**: Namespace isolation, encrypted passwords, admin token authentication
+- **JWT Authentication**: ECDSA P-256 (ES256) based authentication with audit logging
+- **Comprehensive Audit Logging**: Track all authenticated requests for compliance
 
 ## Quick Start
 
@@ -92,9 +94,15 @@ pnpm run dev
 
 ### 1. Create an Instance (VaultWarden Instance)
 
+First, generate a root JWT token signed with the root private key (configured via `ROOT_JWT_PUBLIC_KEY`):
+
 ```bash
+# Create instance with root JWT authentication
+JWT_TOKEN="eyJhbGc..." # Signed with root private key
+
 curl -X POST http://localhost:3000/admin/instances \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -d '{"name":"Engineering Team"}'
 ```
 
@@ -104,23 +112,33 @@ Response:
   "instance_id": "instance-2574af3733dd26f5",
   "vaultwd_url": "http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local",
   "admin_token": "...",
+  "jwt_private_key": "-----BEGIN PRIVATE KEY-----\n...",
   "status": "provisioning"
 }
 ```
 
+**⚠️ Important:** Save the `jwt_private_key` securely - it's only sent once and is needed to sign future requests for this instance.
+
 ### 2. Check Instance Status
 
 ```bash
-curl http://localhost:3000/admin/instances/instance-2574af3733dd26f5
+curl http://localhost:3000/admin/instances/instance-2574af3733dd26f5 \
+  -H "Authorization: Bearer $JWT_TOKEN"
 ```
 
 Wait until `status: "ready"` before creating organisations.
 
 ### 3. Create an Organisation
 
+Use the instance JWT private key to sign requests:
+
 ```bash
+# Sign JWT with instance private key
+INSTANCE_JWT_TOKEN="eyJhbGc..." # Signed with instance's jwt_private_key
+
 curl -X POST http://localhost:3000/instances/instance-2574af3733dd26f5/organisations \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $INSTANCE_JWT_TOKEN" \
   -d '{"name":"Robotics Team"}'
 ```
 
@@ -129,13 +147,15 @@ curl -X POST http://localhost:3000/instances/instance-2574af3733dd26f5/organisat
 ```bash
 curl -X POST http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $INSTANCE_JWT_TOKEN" \
   -d '{"name":"Slack Workspace","value":"super-secret-password"}'
 ```
 
 ### 5. List Passwords
 
 ```bash
-curl http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords
+curl http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords \
+  -H "Authorization: Bearer $INSTANCE_JWT_TOKEN"
 ```
 
 ## Architecture
@@ -219,11 +239,15 @@ keyforge/
 ├── src/
 │   ├── index.ts              # Main Hono app
 │   ├── types.ts              # TypeScript interfaces
+│   ├── context.d.ts          # Hono context extensions (JWT)
 │   ├── routes/
 │   │   ├── admin.ts          # Instance management & deployment endpoints
 │   │   ├── organisations.ts  # Organisation & password management
 │   │   └── health.ts         # Health check endpoints
 │   ├── services/
+│   │   ├── jwt-service.ts    # JWT signing and verification
+│   │   ├── key-registry.ts   # Public key management
+│   │   ├── audit-logger.ts   # Request audit logging
 │   │   ├── vaultwd-client.ts # VaultWarden HTTP client
 │   │   ├── registry.ts       # Database queries
 │   │   ├── k8s.ts            # Kubernetes/Helm operations
@@ -233,12 +257,15 @@ keyforge/
 │   │   ├── client.ts         # Database connection
 │   │   └── migrate.ts        # Database initialization
 │   └── middleware/
+│       ├── jwt-auth.ts       # JWT verification middleware
+│       ├── audit-middleware.ts # Request audit logging middleware
 │       └── error-handler.ts  # Global error handling
 ├── helm-chart/               # VaultWarden Helm chart templates
 ├── frontend/                 # React admin dashboard
 ├── docker-compose.yml        # Local development setup
 ├── Dockerfile                # API container with kubectl/helm
-└── openapi.yaml              # API specification
+├── openapi.yaml              # API specification
+└── JWT_IMPLEMENTATION_PLAN.md # JWT implementation details
 ```
 
 ## Development

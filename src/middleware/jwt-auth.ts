@@ -47,17 +47,6 @@ export async function jwtAuth(c: Context, next: Next): Promise<Response | void> 
 
   // Attach JWT payload to context
   c.set('jwt', payload)
-  
-  // Log JWT data (as specified in requirements)
-  console.log('JWT Data:', {
-    sub: payload.sub,
-    instanceId: payload.instanceId,
-    requestId: payload.requestId,
-    metadata: payload.metadata,
-    isAdmin: payload.isAdmin,
-    path: c.req.path,
-    method: c.req.method
-  })
 
   await next()
 }
