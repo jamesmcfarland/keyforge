@@ -5,6 +5,8 @@ import type { CreateInstanceRequest, CreateInstanceResponse, Instance, Deploymen
 import * as registry from '../services/registry.js'
 import * as k8s from '../services/k8s.js'
 import { getLogs } from '../services/deployment-tracker.js'
+import { generateECCKeyPair } from '../services/jwt-service.js'
+import { storeInstanceKey } from '../services/key-registry.js'
 
 const admin = new Hono()
 
@@ -25,6 +27,12 @@ admin.post('/instances', async (c) => {
       parallelism: 4
     })
     const vaultwd_url = `http://vaultwd-service.${instanceId}.svc.cluster.local`
+
+    // Generate ECC key pair for JWT authentication
+    const { privateKey, publicKey } = generateECCKeyPair()
+    
+    // Store public key for verification
+    await storeInstanceKey(instanceId, publicKey)
 
     const instance: Instance = {
       id: instanceId,
@@ -47,10 +55,11 @@ admin.post('/instances', async (c) => {
         console.error(`Failed to provision instance ${instanceId}:`, error)
       })
 
-    const response: CreateInstanceResponse = {
+    const response = {
       instance_id: instance.id,
       vaultwd_url: instance.vaultwd_url,
       admin_token: instance.vaultwd_admin_token,
+      jwt_private_key: privateKey, // ⚠️ Only sent once - client must save securely
       status: instance.status
     }
 
