@@ -24,6 +24,7 @@ services:
       NODE_ENV: development
       KUBECONFIG: ${KUBECONFIG:-/app/.kube/config}
       KUBE_HOST: ${KUBE_HOST:-host.docker.internal}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-dev_admin_key_change_in_production}
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,7 +43,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "5173:5173"
+      - "3001:5173"
     environment:
       VITE_API_BASE: http://localhost:3000
     depends_on:
@@ -51,7 +52,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     working_dir: /app
-    command: pnpm run dev
+    command: pnpm run dev --host 0.0.0.0 --port 5173
 
 volumes:
   postgres_data:

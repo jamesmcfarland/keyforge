@@ -6,11 +6,10 @@ import admin from './routes/admin.js'
 import health from './routes/health.js'
 import organisations from './routes/organisations.js'
 import { errorHandler } from './middleware/error-handler.js'
-import { jwtAuth, requireAdmin } from './middleware/jwt-auth.js'
+import { jwtAuth } from './middleware/jwt-auth.js'
+import { apiKeyAuth } from './middleware/api-key-auth.js'
 import { auditMiddleware } from './middleware/audit-middleware.js'
-import { initializeDatabase } from './db/migrate.js'
 import { closeDatabase } from './db/client.js'
-import { loadRootPublicKey } from './services/key-registry.js'
 
 const BANNER = `
 ╔═══════════════════════════════════════════════════════════════════════╗
@@ -33,7 +32,7 @@ const app = new Hono()
 app.use('*', logger())
 
 app.use('*', cors({
-  origin: ['http://localhost:5173', 'http://localhost:3001'],
+  origin: ['http://localhost:3001'],
   credentials: true
 }))
 
@@ -50,8 +49,8 @@ app.get('/', (c) => {
   })
 })
 
-// Protected admin routes (require JWT with isAdmin: true)
-app.use('/admin/*', jwtAuth, requireAdmin)
+// Protected admin routes (require API key)
+app.use('/admin/*', apiKeyAuth)
 app.route('/admin', admin)
 
 // Health check (public)
@@ -63,17 +62,15 @@ app.route('/', organisations)
 
 console.log(BANNER)
 
-// Initialize root JWT public key
-try {
-  loadRootPublicKey()
-  console.log('✅ Root JWT public key loaded successfully')
-} catch (error) {
-  console.error('❌ Failed to load root JWT public key:', error)
-  console.error('   Make sure ROOT_JWT_PUBLIC_KEY environment variable is set')
+// Validate admin API key is set
+if (!process.env.ADMIN_API_KEY) {
+  console.error('❌ ADMIN_API_KEY environment variable not set')
+  console.error('   Generate one with: openssl rand -hex 32')
+  console.error('   Then add it to your .env file')
   process.exit(1)
 }
+console.log('✅ Admin API key configured')
 
-await initializeDatabase()
 
 const server = serve({
   fetch: app.fetch,

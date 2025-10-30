@@ -6,11 +6,12 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx src/db/migrate.ts",
+    "db:migrate": "drizzle-kit migrate",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f api"
+    "docker:logs": "docker-compose logs -f api",
+    "docs": "redoc-cli build openapi.yaml -o dist/docs/index.html && http-server dist/docs -p 8080 -o"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.5",

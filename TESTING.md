@@ -19,10 +19,23 @@ The collection uses the following variables (editable in the collection or envir
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `base_url` | `http://localhost:3000` | API server URL |
+| `admin_api_key` | (required) | Your admin API key for `/admin/*` endpoints |
 | `instance_id` | `instance-2574af3733dd26f5` | Test instance ID (update after creating an instance) |
 | `organisation_id` | `organisation-e6557cc8e1656983` | Test organisation ID (update after creating an organisation) |
 | `password_id` | `pwd-657bbc9ee11296d0` | Test password ID (update after creating a password) |
 | `timestamp` | `1761318123092` | Unix timestamp for log filtering |
+
+**Setup Admin API Key:**
+
+```bash
+# Generate an API key
+openssl rand -hex 32
+
+# Add to .env file
+echo "ADMIN_API_KEY=<your_key>" >> .env
+
+# Set in Postman as collection variable or environment variable
+```
 
 ## Testing Workflow
 

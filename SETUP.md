@@ -119,6 +119,9 @@ cd keyforge
 # Copy environment template
 cp .env.example .env
 
+# Generate and configure admin API key
+echo "ADMIN_API_KEY=$(openssl rand -hex 32)" >> .env
+
 # Edit .env if needed (optional)
 nano .env
 ```

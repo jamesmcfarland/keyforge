@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: Keyforge API
   version: 0.1.0
@@ -7,6 +7,20 @@ info:
     
     Keyforge provisions isolated VaultWarden instances in Kubernetes and manages
     organizations with shared password vaults for teams.
+    
+    ## Authentication
+    
+    The API uses two authentication methods:
+    
+    1. **Admin API Key** - For administrative operations (`/admin/*` endpoints)
+       - Provided via `X-API-Key` header
+       - Required for instance management and deployment operations
+    
+    2. **JWT Bearer Token** - For instance-specific operations (`/organisations/*` endpoints)
+       - Provided via `Authorization: Bearer <token>` header
+       - Each instance has its own ECC key pair for JWT signing
+       - JWT must include `instance_id` claim matching the instance in the URL
+       - JWTs are verified using the instance's public key stored in the database
   contact:
     name: Keyforge
 servers:
@@ -15,11 +29,11 @@ servers:
 
 tags:
   - name: admin
-    description: Instance (VaultWarden instance) management
+    description: Instance (VaultWarden instance) management - requires Admin API Key
   - name: organisations
-    description: Organisation and password management
+    description: Organisation and password management - requires JWT authentication
   - name: health
-    description: Health check endpoints
+    description: Health check endpoints - public access
 
 paths:
   /:
@@ -49,10 +63,13 @@ paths:
       summary: Create a new instance
       description: |
         Provisions a new VaultWarden instance in Kubernetes with its own namespace,
-        PostgreSQL database, and isolated resources. Returns immediately with
-        'provisioning' status - check instance status endpoint for completion.
+        PostgreSQL database, and isolated resources. Also generates an ECC key pair
+        for JWT authentication. Returns immediately with 'provisioning' status - 
+        check instance status endpoint for completion.
       tags:
         - admin
+      security:
+        - ApiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -72,6 +89,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
@@ -84,6 +107,8 @@ paths:
       description: Returns all instances (VaultWarden instances)
       tags:
         - admin
+      security:
+        - ApiKeyAuth: []
       responses:
         '200':
           description: List of instances
@@ -96,6 +121,12 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Instance'
+        '401':
+          description: Unauthorized - invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /admin/instances/{instance_id}:
     get:
@@ -103,6 +134,8 @@ paths:
       description: Returns details for a specific instance including status
       tags:
         - admin
+      security:
+        - ApiKeyAuth: []
       parameters:
         - $ref: '#/components/parameters/InstanceId'
       responses:
@@ -112,6 +145,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Instance'
+        '401':
+          description: Unauthorized - invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Instance not found
           content:
@@ -124,6 +163,8 @@ paths:
       description: Deletes the instance's Kubernetes namespace and all associated resources
       tags:
         - admin
+      security:
+        - ApiKeyAuth: []
       parameters:
         - $ref: '#/components/parameters/InstanceId'
       responses:
@@ -137,6 +178,12 @@ paths:
                   message:
                     type: string
                     example: Instance deleted successfully
+        '401':
+          description: Unauthorized - invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Instance not found
           content:
@@ -150,8 +197,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-   /instances/{instance_id}/organisations:
-     post:
+  /instances/{instance_id}/organisations:
+    post:
        summary: Create a new organisation
        description: |
          Creates a new organisation within an instance. This:
@@ -161,6 +208,8 @@ paths:
          Organizations enable multi-user password sharing.
        tags:
          - organisations
+       security:
+         - BearerAuth: []
        parameters:
          - $ref: '#/components/parameters/InstanceId'
        requestBody:
@@ -182,6 +231,18 @@ paths:
              application/json:
                schema:
                  $ref: '#/components/schemas/Error'
+         '401':
+           description: Unauthorized - invalid or missing JWT
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/Error'
+         '403':
+           description: Forbidden - JWT instance_id doesn't match URL instance_id
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/Error'
          '404':
            description: Instance not found
            content:
@@ -199,13 +260,15 @@ paths:
            content:
              application/json:
                schema:
-                 $ref: '#/components/schemas/Error'
-     
-     get:
+                $ref: '#/components/schemas/Error'
+
+    get:
        summary: List all organisations
        description: Returns all organisations within an instance
        tags:
          - organisations
+       security:
+         - BearerAuth: []
        parameters:
          - $ref: '#/components/parameters/InstanceId'
        responses:
@@ -220,6 +283,18 @@ paths:
                      type: array
                      items:
                        $ref: '#/components/schemas/Organisation'
+         '401':
+           description: Unauthorized - invalid or missing JWT
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/Error'
+         '403':
+           description: Forbidden - JWT instance_id doesn't match URL instance_id
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/Error'
          '404':
            description: Instance not found
            content:
@@ -239,6 +314,8 @@ paths:
       description: Returns details for a specific organisation
       tags:
         - organisations
+      security:
+        - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/InstanceId'
         - $ref: '#/components/parameters/OrganisationId'
@@ -249,6 +326,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organisation'
+        '401':
+          description: Unauthorized - invalid or missing JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - JWT instance_id doesn't match URL instance_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Instance or organisation not found
           content:
@@ -264,6 +353,8 @@ paths:
         The password is stored encrypted and accessible to all organization members.
       tags:
         - organisations
+      security:
+        - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/InstanceId'
         - $ref: '#/components/parameters/OrganisationId'
@@ -282,6 +373,18 @@ paths:
                 $ref: '#/components/schemas/CreatePasswordResponse'
         '400':
           description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - invalid or missing JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - JWT instance_id doesn't match URL instance_id
           content:
             application/json:
               schema:
@@ -310,6 +413,8 @@ paths:
       description: Returns all passwords for an organisation
       tags:
         - organisations
+      security:
+        - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/InstanceId'
         - $ref: '#/components/parameters/OrganisationId'
@@ -320,6 +425,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PasswordListResponse'
+        '401':
+          description: Unauthorized - invalid or missing JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - JWT instance_id doesn't match URL instance_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Instance or organisation not found
           content:
@@ -345,6 +462,8 @@ paths:
       description: Returns the full password details including the decrypted password value
       tags:
         - organisations
+      security:
+        - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/InstanceId'
         - $ref: '#/components/parameters/OrganisationId'
@@ -356,6 +475,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PasswordDetail'
+        '401':
+          description: Unauthorized - invalid or missing JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - JWT instance_id doesn't match URL instance_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Instance, organisation, or password not found
           content:
@@ -380,6 +511,8 @@ paths:
       description: Updates the name and/or value of a password
       tags:
         - organisations
+      security:
+        - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/InstanceId'
         - $ref: '#/components/parameters/OrganisationId'
@@ -399,6 +532,18 @@ paths:
                 $ref: '#/components/schemas/PasswordDetail'
         '400':
           description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - invalid or missing JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - JWT instance_id doesn't match URL instance_id
           content:
             application/json:
               schema:
@@ -427,6 +572,8 @@ paths:
       description: Deletes a password entry from the organisation
       tags:
         - organisations
+      security:
+        - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/InstanceId'
         - $ref: '#/components/parameters/OrganisationId'
@@ -442,6 +589,18 @@ paths:
                   message:
                     type: string
                     example: Password deleted successfully
+        '401':
+          description: Unauthorized - invalid or missing JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - JWT instance_id doesn't match URL instance_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Instance, organisation, or password not found
           content:
@@ -489,12 +648,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthCheck'
 
-   /admin/deployments:
-     get:
+  /admin/deployments:
+    get:
        summary: List all deployments
        description: Returns all deployments (same as instances list)
        tags:
          - admin
+       security:
+         - ApiKeyAuth: []
        responses:
          '200':
            description: List of deployments
@@ -507,13 +668,21 @@ paths:
                      type: array
                      items:
                        $ref: '#/components/schemas/Instance'
+         '401':
+           description: Unauthorized - invalid or missing API key
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/Error'
 
-   /admin/deployments/{deployment_id}:
-     get:
+  /admin/deployments/{deployment_id}:
+    get:
        summary: Get deployment details
        description: Returns detailed information about a deployment including organisations and events
        tags:
          - admin
+       security:
+         - ApiKeyAuth: []
        parameters:
          - name: deployment_id
            in: path
@@ -530,6 +699,12 @@ paths:
              application/json:
                schema:
                  $ref: '#/components/schemas/DeploymentDetail'
+         '401':
+           description: Unauthorized - invalid or missing API key
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/Error'
          '404':
            description: Deployment not found
            content:
@@ -537,12 +712,14 @@ paths:
                schema:
                  $ref: '#/components/schemas/Error'
 
-   /admin/deployments/{deployment_id}/events:
-     get:
+  /admin/deployments/{deployment_id}/events:
+    get:
        summary: Get deployment events
        description: Returns all events for a deployment
        tags:
          - admin
+       security:
+         - ApiKeyAuth: []
        parameters:
          - name: deployment_id
            in: path
@@ -559,6 +736,12 @@ paths:
              application/json:
                schema:
                  $ref: '#/components/schemas/DeploymentEventsResponse'
+         '401':
+           description: Unauthorized - invalid or missing API key
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/Error'
          '404':
            description: Deployment not found
            content:
@@ -566,12 +749,14 @@ paths:
                schema:
                  $ref: '#/components/schemas/Error'
 
-   /admin/deployments/{deployment_id}/logs:
-     get:
+  /admin/deployments/{deployment_id}/logs:
+    get:
        summary: Get deployment logs
        description: Returns logs for a deployment with pagination and filtering
        tags:
          - admin
+       security:
+         - ApiKeyAuth: []
        parameters:
          - name: deployment_id
            in: path
@@ -581,73 +766,79 @@ paths:
              type: string
              pattern: '^instance-[a-f0-9]{16}$'
              example: instance-2574af3733dd26f5
-        - name: level
-          in: query
-          required: false
-          description: Filter logs by level
-          schema:
-            type: string
-            enum: [info, warn, error, debug]
-        - name: since
-          in: query
-          required: false
-          description: Filter logs since timestamp (Unix milliseconds)
-          schema:
-            type: integer
-            format: int64
-        - name: page
-          in: query
-          required: false
-          description: Page number (default 1)
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-        - name: limit
-          in: query
-          required: false
-          description: Number of logs per page (default 100)
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 1000
-            default: 100
-      responses:
-        '200':
-          description: Paginated list of logs
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeploymentLogsResponse'
-        '404':
-          description: Deployment not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+         - name: level
+           in: query
+           required: false
+           description: Filter logs by level
+           schema:
+             type: string
+             enum: [info, warn, error, debug]
+         - name: since
+           in: query
+           required: false
+           description: Filter logs since timestamp (Unix milliseconds)
+           schema:
+             type: integer
+             format: int64
+         - name: page
+           in: query
+           required: false
+           description: Page number (default 1)
+           schema:
+             type: integer
+             minimum: 1
+             default: 1
+         - name: limit
+           in: query
+           required: false
+           description: Number of logs per page (default 100)
+           schema:
+             type: integer
+             minimum: 1
+             maximum: 1000
+             default: 100
+       responses:
+         '200':
+           description: Paginated list of logs
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/DeploymentLogsResponse'
+         '401':
+           description: Unauthorized - invalid or missing API key
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/Error'
+         '404':
+           description: Deployment not found
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/Error'
 
 components:
   parameters:
-     InstanceId:
-       name: instance_id
-       in: path
-       required: true
-       description: Unique identifier for the instance
-       schema:
-         type: string
-         pattern: '^instance-[a-f0-9]{16}$'
-         example: instance-2574af3733dd26f5
-    
-     OrganisationId:
-       name: organisation_id
-       in: path
-       required: true
-       description: Unique identifier for the organisation
-       schema:
-         type: string
-         pattern: '^organisation-[a-f0-9]{16}$'
-         example: organisation-e6557cc8e1656983
-    
+    InstanceId:
+      name: instance_id
+      in: path
+      required: true
+      description: Unique identifier for the instance
+      schema:
+        type: string
+        pattern: '^instance-[a-f0-9]{16}$'
+        example: instance-2574af3733dd26f5
+
+    OrganisationId:
+      name: organisation_id
+      in: path
+      required: true
+      description: Unique identifier for the organisation
+      schema:
+        type: string
+        pattern: '^organisation-[a-f0-9]{16}$'
+        example: organisation-e6557cc8e1656983
+
     PasswordId:
       name: password_id
       in: path
@@ -670,53 +861,53 @@ components:
           description: Human-readable name for the instance
           example: production-environment
 
-      CreateInstanceResponse:
-        type: object
-        properties:
-          instance_id:
-            type: string
-            example: instance-2574af3733dd26f5
-          vaultwd_url:
-            type: string
-            format: uri
-            example: http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local
-          admin_token:
-            type: string
-            description: Admin token for VaultWarden (store securely, only returned once)
-            example: 2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640
-          jwt_private_key:
-            type: string
-            description: ECC private key for JWT authentication (store securely, only returned once)
-            example: -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----
-          status:
-            $ref: '#/components/schemas/InstanceStatus'
+    CreateInstanceResponse:
+      type: object
+      properties:
+        instance_id:
+          type: string
+          example: instance-2574af3733dd26f5
+        vaultwd_url:
+          type: string
+          format: uri
+          example: http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local
+        admin_token:
+          type: string
+          description: Admin token for VaultWarden (store securely, only returned once)
+          example: 2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640
+        jwt_private_key:
+          type: string
+          description: ECC private key for JWT authentication (store securely, only returned once)
+          example: -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----
+        status:
+          $ref: '#/components/schemas/InstanceStatus'
 
-     Instance:
-       type: object
-       properties:
-         id:
-           type: string
-           example: instance-2574af3733dd26f5
-         name:
-           type: string
-           example: production-environment
-         vaultwd_url:
-           type: string
-           format: uri
-           example: http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local
-         vaultwd_admin_token:
-           type: string
-           example: 2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640
-         status:
-           $ref: '#/components/schemas/InstanceStatus'
-         error:
-           type: string
-           description: Error message if status is 'failed'
-         created_at:
-           type: integer
-           format: int64
-           description: Unix timestamp in milliseconds
-           example: 1761318123092
+    Instance:
+      type: object
+      properties:
+        id:
+          type: string
+          example: instance-2574af3733dd26f5
+        name:
+          type: string
+          example: production-environment
+        vaultwd_url:
+          type: string
+          format: uri
+          example: http://vaultwd-service.instance-2574af3733dd26f5.svc.cluster.local
+        vaultwd_admin_token:
+          type: string
+          example: 2f420999e18a6ed446bbb4d109c383cc56a50a45ea04098d9fbd6ce7c859d640
+        status:
+          $ref: '#/components/schemas/InstanceStatus'
+        error:
+          type: string
+          description: Error message if status is 'failed'
+        created_at:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds
+          example: 1761318123092
 
     InstanceStatus:
       type: string
@@ -740,53 +931,53 @@ components:
           description: Human-readable name for the organisation
           example: engineering-team
 
-     CreateOrganisationResponse:
-       type: object
-       properties:
-         organisation_id:
-           type: string
-           example: organisation-e6557cc8e1656983
-         instance_id:
-           type: string
-           example: instance-2574af3733dd26f5
-         vaultwd_org_id:
-           type: string
-           format: uuid
-           description: VaultWarden organization UUID
-           example: 42b2b981-ed49-48ce-9b3f-7ad6b53c2e46
-         status:
-           $ref: '#/components/schemas/OrganisationStatus'
+    CreateOrganisationResponse:
+      type: object
+      properties:
+        organisation_id:
+          type: string
+          example: organisation-e6557cc8e1656983
+        instance_id:
+          type: string
+          example: instance-2574af3733dd26f5
+        vaultwd_org_id:
+          type: string
+          format: uuid
+          description: VaultWarden organization UUID
+          example: 42b2b981-ed49-48ce-9b3f-7ad6b53c2e46
+        status:
+          $ref: '#/components/schemas/OrganisationStatus'
 
-     Organisation:
-       type: object
-       properties:
-         id:
-           type: string
-           example: organisation-e6557cc8e1656983
-         name:
-           type: string
-           example: engineering-team
-         instance_id:
-           type: string
-           example: instance-2574af3733dd26f5
-         vaultwd_org_id:
-           type: string
-           format: uuid
-           example: 42b2b981-ed49-48ce-9b3f-7ad6b53c2e46
-         vaultwd_user_email:
-           type: string
-           format: email
-           description: Service account email in VaultWarden
-           example: organisation-e6557cc8e1656983@keyforge.local
-         vaultwd_user_token:
-           type: string
-           description: Bearer token for VaultWarden API calls
-         status:
-           $ref: '#/components/schemas/OrganisationStatus'
-         created_at:
-           type: integer
-           format: int64
-           example: 1761318156000
+    Organisation:
+      type: object
+      properties:
+        id:
+          type: string
+          example: organisation-e6557cc8e1656983
+        name:
+          type: string
+          example: engineering-team
+        instance_id:
+          type: string
+          example: instance-2574af3733dd26f5
+        vaultwd_org_id:
+          type: string
+          format: uuid
+          example: 42b2b981-ed49-48ce-9b3f-7ad6b53c2e46
+        vaultwd_user_email:
+          type: string
+          format: email
+          description: Service account email in VaultWarden
+          example: organisation-e6557cc8e1656983@keyforge.local
+        vaultwd_user_token:
+          type: string
+          description: Bearer token for VaultWarden API calls
+        status:
+          $ref: '#/components/schemas/OrganisationStatus'
+        created_at:
+          type: integer
+          format: int64
+          example: 1761318156000
 
     OrganisationStatus:
       type: string
@@ -799,166 +990,166 @@ components:
         - created: Organization created successfully
         - failed: Creation failed
 
-     CreatePasswordRequest:
-       type: object
-       required:
-         - name
-         - password
-       properties:
-         name:
-           type: string
-           minLength: 1
-           description: Name/label for the password entry
-           example: database-password
-         password:
-           type: string
-           minLength: 1
-           description: The actual password value (stored encrypted in VaultWarden)
-           example: super-secret-123
-         username:
-           type: string
-           description: Optional username associated with the password
-           example: db_user
-         totp:
-           type: string
-           description: Optional TOTP secret for two-factor authentication
-           example: JBSWY3DPEBLW64TMMQ======
-         uris:
-           type: array
-           items:
-             type: string
-           description: Optional list of URIs where this password is used
-           example: [https://database.example.com, https://backup.example.com]
-         notes:
-           type: string
-           description: Optional notes about the password
-           example: Production database credentials
+    CreatePasswordRequest:
+      type: object
+      required:
+        - name
+        - password
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Name/label for the password entry
+          example: database-password
+        password:
+          type: string
+          minLength: 1
+          description: The actual password value (stored encrypted in VaultWarden)
+          example: super-secret-123
+        username:
+          type: string
+          description: Optional username associated with the password
+          example: db_user
+        totp:
+          type: string
+          description: Optional TOTP secret for two-factor authentication
+          example: JBSWY3DPEBLW64TMMQ======
+        uris:
+          type: array
+          items:
+            type: string
+          description: Optional list of URIs where this password is used
+          example: [https://database.example.com, https://backup.example.com]
+        notes:
+          type: string
+          description: Optional notes about the password
+          example: Production database credentials
 
-     CreatePasswordResponse:
-       type: object
-       properties:
-         password_id:
-           type: string
-           example: pwd-657bbc9ee11296d0
-         organisation_id:
-           type: string
-           example: organisation-e6557cc8e1656983
-         name:
-           type: string
-           example: database-password
-         created_at:
-           type: integer
-           format: int64
-           example: 1761318165804
+    CreatePasswordResponse:
+      type: object
+      properties:
+        password_id:
+          type: string
+          example: pwd-657bbc9ee11296d0
+        organisation_id:
+          type: string
+          example: organisation-e6557cc8e1656983
+        name:
+          type: string
+          example: database-password
+        created_at:
+          type: integer
+          format: int64
+          example: 1761318165804
 
-     Password:
-       type: object
-       properties:
-         id:
-           type: string
-           example: pwd-657bbc9ee11296d0
-         organisation_id:
-           type: string
-           example: organisation-e6557cc8e1656983
-         name:
-           type: string
-           example: database-password
-         created_at:
-           type: integer
-           format: int64
-           example: 1761318165804
+    Password:
+      type: object
+      properties:
+        id:
+          type: string
+          example: pwd-657bbc9ee11296d0
+        organisation_id:
+          type: string
+          example: organisation-e6557cc8e1656983
+        name:
+          type: string
+          example: database-password
+        created_at:
+          type: integer
+          format: int64
+          example: 1761318165804
 
-     PasswordDetail:
-       type: object
-       properties:
-         id:
-           type: string
-           example: pwd-657bbc9ee11296d0
-         organisation_id:
-           type: string
-           example: organisation-e6557cc8e1656983
-         name:
-           type: string
-           example: database-password
-         username:
-           type: string
-           description: Optional username
-           example: db_user
-         password:
-           type: string
-           description: The decrypted password value
-           example: super-secret-123
-         totp:
-           type: string
-           description: Optional TOTP secret
-         uris:
-           type: array
-           items:
-             type: string
-           description: Optional list of URIs
-         notes:
-           type: string
-           description: Optional notes
-         created_at:
-           type: integer
-           format: int64
-           example: 1761318165804
+    PasswordDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          example: pwd-657bbc9ee11296d0
+        organisation_id:
+          type: string
+          example: organisation-e6557cc8e1656983
+        name:
+          type: string
+          example: database-password
+        username:
+          type: string
+          description: Optional username
+          example: db_user
+        password:
+          type: string
+          description: The decrypted password value
+          example: super-secret-123
+        totp:
+          type: string
+          description: Optional TOTP secret
+        uris:
+          type: array
+          items:
+            type: string
+          description: Optional list of URIs
+        notes:
+          type: string
+          description: Optional notes
+        created_at:
+          type: integer
+          format: int64
+          example: 1761318165804
 
-     UpdatePasswordRequest:
-       type: object
-       properties:
-         name:
-           type: string
-           description: New name for the password (optional)
-           example: updated-password-name
-         password:
-           type: string
-           description: New password value (optional)
-           example: new-super-secret-456
-         username:
-           type: string
-           description: New username (optional)
-           example: updated_user
-         totp:
-           type: string
-           description: New TOTP secret (optional)
-         uris:
-           type: array
-           items:
-             type: string
-           description: New list of URIs (optional)
-         notes:
-           type: string
-           description: New notes (optional)
-       minProperties: 1
+    UpdatePasswordRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New name for the password (optional)
+          example: updated-password-name
+        password:
+          type: string
+          description: New password value (optional)
+          example: new-super-secret-456
+        username:
+          type: string
+          description: New username (optional)
+          example: updated_user
+        totp:
+          type: string
+          description: New TOTP secret (optional)
+        uris:
+          type: array
+          items:
+            type: string
+          description: New list of URIs (optional)
+        notes:
+          type: string
+          description: New notes (optional)
+      minProperties: 1
 
-     PasswordListResponse:
-       type: object
-       properties:
-         organisation_id:
-           type: string
-           example: organisation-e6557cc8e1656983
-         passwords:
-           type: array
-           items:
-             $ref: '#/components/schemas/Password'
+    PasswordListResponse:
+      type: object
+      properties:
+        organisation_id:
+          type: string
+          example: organisation-e6557cc8e1656983
+        passwords:
+          type: array
+          items:
+            $ref: '#/components/schemas/Password'
 
-     HealthCheck:
-       type: object
-       properties:
-         status:
-           $ref: '#/components/schemas/HealthStatus'
-         instance_id:
-           type: string
-           example: instance-2574af3733dd26f5
-         message:
-           type: string
-           description: Additional status message if unhealthy
-           example: VaultWarden returned status 503
-         checked_at:
-           type: integer
-           format: int64
-           example: 1761318200000
+    HealthCheck:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatus'
+        instance_id:
+          type: string
+          example: instance-2574af3733dd26f5
+        message:
+          type: string
+          description: Additional status message if unhealthy
+          example: VaultWarden returned status 503
+        checked_at:
+          type: integer
+          format: int64
+          example: 1761318200000
 
     HealthStatus:
       type: string
@@ -980,27 +1171,27 @@ components:
           items:
             $ref: '#/components/schemas/DeploymentEvent'
 
-     DeploymentEvent:
-       type: object
-       properties:
-         id:
-           type: string
-           example: evt-1a2b3c4d5e6f7890
-         deployment_id:
-           type: string
-           example: instance-2574af3733dd26f5
-         step:
-           type: string
-           example: create-namespace
-         status:
-           $ref: '#/components/schemas/DeploymentEventStatus'
-         message:
-           type: string
-           example: Namespace created successfully
-         created_at:
-           type: integer
-           format: int64
-           example: 1761318123092
+    DeploymentEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          example: evt-1a2b3c4d5e6f7890
+        deployment_id:
+          type: string
+          example: instance-2574af3733dd26f5
+        step:
+          type: string
+          example: create-namespace
+        status:
+          $ref: '#/components/schemas/DeploymentEventStatus'
+        message:
+          type: string
+          example: Namespace created successfully
+        created_at:
+          type: integer
+          format: int64
+          example: 1761318123092
 
     DeploymentEventStatus:
       type: string
@@ -1010,35 +1201,35 @@ components:
         - success
         - failed
 
-     DeploymentEventsResponse:
-       type: object
-       properties:
-         deployment_id:
-           type: string
-           example: instance-2574af3733dd26f5
-         events:
-           type: array
-           items:
-             $ref: '#/components/schemas/DeploymentEvent'
+    DeploymentEventsResponse:
+      type: object
+      properties:
+        deployment_id:
+          type: string
+          example: instance-2574af3733dd26f5
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeploymentEvent'
 
-     DeploymentLog:
-       type: object
-       properties:
-         id:
-           type: string
-           example: log-1a2b3c4d5e6f7890
-         deployment_id:
-           type: string
-           example: instance-2574af3733dd26f5
-         level:
-           $ref: '#/components/schemas/LogLevel'
-         message:
-           type: string
-           example: Starting PostgreSQL deployment
-         created_at:
-           type: integer
-           format: int64
-           example: 1761318123092
+    DeploymentLog:
+      type: object
+      properties:
+        id:
+          type: string
+          example: log-1a2b3c4d5e6f7890
+        deployment_id:
+          type: string
+          example: instance-2574af3733dd26f5
+        level:
+          $ref: '#/components/schemas/LogLevel'
+        message:
+          type: string
+          example: Starting PostgreSQL deployment
+        created_at:
+          type: integer
+          format: int64
+          example: 1761318123092
 
     LogLevel:
       type: string
@@ -1048,33 +1239,84 @@ components:
         - error
         - debug
 
-     DeploymentLogsResponse:
-       type: object
-       properties:
-         deployment_id:
-           type: string
-           example: instance-2574af3733dd26f5
-         logs:
-           type: array
-           items:
-             $ref: '#/components/schemas/DeploymentLog'
-         total:
-           type: integer
-           description: Total number of logs matching the filter
-           example: 250
-         page:
-           type: integer
-           description: Current page number
-           example: 1
-         limit:
-           type: integer
-           description: Number of logs per page
-           example: 100
+    DeploymentLogsResponse:
+      type: object
+      properties:
+        deployment_id:
+          type: string
+          example: instance-2574af3733dd26f5
+        logs:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeploymentLog'
+        total:
+          type: integer
+          description: Total number of logs matching the filter
+          example: 250
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        limit:
+          type: integer
+          description: Number of logs per page
+          example: 100
 
-     Error:
-       type: object
-       properties:
-         error:
-           type: string
-           description: Error message
-           example: Instance not found
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Instance not found
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API_KEY
+      description: |
+        Admin API key for administrative operations.
+        
+        Use `Authorization: Bearer <API_KEY>` header format.
+        
+        Generate an API key with: `openssl rand -hex 32`
+        Set in environment variable `ADMIN_API_KEY`.
+        
+        Example:
+        ```
+        Authorization: Bearer a11ceb8147bd63ae20b5bc1d68f9aad822e53451b6e88581db78c97a24e952df
+        ```
+    
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token for instance-specific operations.
+        
+        Use `Authorization: Bearer <JWT>` header format.
+        
+        The JWT must be signed with the instance's ECC private key (provided
+        when creating the instance) and must include:
+        - `sub`: The instance ID
+        - `instance_id`: The instance ID (must match the URL parameter)
+        - `iat`: Issued at timestamp
+        - `exp`: Expiration timestamp
+        
+        The token is verified using the instance's public key stored in the database.
+        
+        Example JWT payload:
+        ```json
+        {
+          "sub": "instance-2574af3733dd26f5",
+          "instance_id": "instance-2574af3733dd26f5",
+          "iat": 1761318123,
+          "exp": 1761404523
+        }
+        ```
+        
+        Example header:
+        ```
+        Authorization: Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9...
+        ```

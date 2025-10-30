@@ -2,11 +2,13 @@ import axios from 'axios'
 import type { Instance, DeploymentDetail, DeploymentEventsResponse, DeploymentLogsResponse, CreateOrganisationResponse, PasswordListResponse, PasswordWithValue, CreatePasswordResponse, CreatePasswordRequest } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000'
+const ADMIN_API_KEY = import.meta.env.VITE_ADMIN_API_KEY
 
 const client = axios.create({
   baseURL: API_BASE,
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    ...(ADMIN_API_KEY && { 'Authorization': `Bearer ${ADMIN_API_KEY}` })
   }
 })
 
@@ -72,6 +74,11 @@ export const api = {
 
   deletePassword: async (instanceId: string, organisationId: string, passwordId: string): Promise<{ message: string }> => {
     const response = await client.delete(`/instances/${instanceId}/organisations/${organisationId}/passwords/${passwordId}`)
+    return response.data
+  },
+
+  deleteInstance: async (id: string): Promise<{ message: string }> => {
+    const response = await client.delete(`/admin/instances/${id}`)
     return response.data
   }
 }

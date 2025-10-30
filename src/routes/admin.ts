@@ -29,7 +29,6 @@ admin.post('/instances', async (c) => {
      const vaultwd_url = `http://vaultwd-service.${instanceId}.svc.cluster.local`
 
      const { privateKey, publicKey } = generateECCKeyPair()
-     await storeInstanceKey(instanceId, publicKey)
 
     const instance: Instance = {
       id: instanceId,
@@ -41,6 +40,7 @@ admin.post('/instances', async (c) => {
     }
 
     await registry.addInstance(instance)
+    await storeInstanceKey(instanceId, publicKey)
 
     k8s.provisionInstance(instanceId, hashedToken)
       .then(() => {

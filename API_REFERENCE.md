@@ -39,21 +39,58 @@ http://localhost:3000
 
 ## Authentication
 
-**JWT Authentication** is required for protected endpoints. The Keyforge API uses ECDSA P-256 (ES256) JWT tokens for authentication.
+Keyforge uses **dual authentication** depending on the endpoint:
 
-### Token Types
+### Admin Endpoints Authentication
 
-- **Root Token**: For admin operations (instance management)
-  - `sub` = `"root"`
-  - `isAdmin` = `true`
-  - Signed with root private key
+**API Key Authentication** is required for all admin operations (`/admin/*` routes).
+
+#### Setup
+
+1. Generate a secure random API key:
+   ```bash
+   openssl rand -hex 32
+   ```
+
+2. Add to your `.env` file:
+   ```bash
+   ADMIN_API_KEY=your_generated_key_here
+   ```
+
+3. Include in requests:
+   ```
+   Authorization: Bearer <API_KEY>
+   ```
+
+#### Example
+
+```bash
+curl -X GET http://localhost:3000/admin/instances \
+  -H "Authorization: Bearer abc123def456..."
+```
+
+#### Error Responses
+
+Authentication errors return `401 Unauthorized`:
+
+```json
+{
+  "error": "Invalid API key"
+}
+```
+
+### Instance-Level Authentication
+
+**JWT Authentication** is required for instance-specific operations (`/organisations/*` routes).
+
+#### Token Types
 
 - **Instance Token**: For instance-specific operations (organisations, passwords)
   - `sub` = `"{instance_id}"`
   - `instanceId` = `"{instance_id}"`
-  - Signed with instance private key
+  - Signed with instance private key (returned when creating an instance)
 
-### JWT Payload Structure
+#### JWT Payload Structure
 
 ```json
 {
@@ -71,13 +108,13 @@ http://localhost:3000
 ```
 
 **Fields:**
-- `sub` - Subject: `"root"` or instance ID
+- `sub` - Subject: instance ID or organization identifier
 - `iat` - Issued at (Unix timestamp in seconds)
 - `exp` - Expiration (Unix timestamp in seconds, typically `iat + 60`)
-- `instanceId` - Instance identifier (required for instance tokens)
+- `jti` - JWT ID (unique token identifier, required)
+- `instanceId` - Instance identifier (required)
 - `requestId` - Unique request identifier (UUIDv4 recommended)
 - `metadata` - Client-defined custom data (optional)
-- `isAdmin` - Admin flag (only for root tokens, optional)
 
 ### Token Expiration
 
@@ -95,25 +132,21 @@ Include the token in the `Authorization` header:
 Authorization: Bearer <JWT_TOKEN>
 ```
 
-### Public Key Distribution
-
-**Root Public Key:**
-- Configured via `ROOT_JWT_PUBLIC_KEY` environment variable
-- Base64-encoded PEM format
-- Loaded on server startup
+### Instance Public Keys
 
 **Instance Public Keys:**
 - Generated when instance is created
-- Stored in database
+- Private key returned once in the create instance response
+- Public key stored in database
 - Used to verify instance token signatures
 
-### Authentication Endpoints
+### Protected Routes
 
-- **Admin routes** (`/admin/*`): Require root token with `isAdmin: true`
-- **Organisation routes** (`/organisations/*`): Require instance token with matching `instanceId`
+- **Admin routes** (`/admin/*`): Require API key authentication
+- **Organisation routes** (`/organisations/*`): Require JWT instance token with matching `instanceId`
 - **Health routes** (`/health/*`): Public, no authentication required
 
-### Error Responses
+### JWT Error Responses
 
 Authentication errors return `401 Unauthorized`:
 
@@ -247,16 +280,14 @@ Provisions a new VaultWarden instance in Kubernetes. Returns immediately with `p
 **Example:**
 
 ```bash
-# Generate a root JWT token (client-side) and sign it with root private key
-JWT_TOKEN="eyJhbGc..." # Signed with root private key
-
+# Use your admin API key
 curl -X POST http://localhost:3000/admin/instances \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
   -d '{"name": "production-environment"}'
 ```
 
-**Note:** The private key is returned in the instance creation response. Clients must securely store and sign JWTs with this key.
+**Note:** The JWT private key is returned in the instance creation response. Clients must securely store and sign JWTs with this key for instance-level operations.
 
 ---
 

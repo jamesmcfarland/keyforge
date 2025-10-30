@@ -16,8 +16,8 @@ Keyforge is an open-source API that provisions and manages isolated [VaultWarden
 - **Organization management**: Create organisations (VaultWarden organizations) within each instance
 - **Password orchestration**: Store and retrieve shared credentials via REST API
 - **Automatic provisioning**: Helm-based deployment of VaultWarden + PostgreSQL
-- **Secure by default**: Namespace isolation, encrypted passwords, admin token authentication
-- **JWT Authentication**: ECDSA P-256 (ES256) based authentication with audit logging
+- **Secure by default**: Namespace isolation, encrypted passwords, API key authentication
+- **Dual Authentication**: API key for admin operations, JWT for instance-level operations
 - **Comprehensive Audit Logging**: Track all authenticated requests for compliance
 
 ## Quick Start
@@ -40,6 +40,9 @@ cd keyforge
 
 # Copy environment variables
 cp .env.example .env
+
+# Generate and set admin API key
+echo "ADMIN_API_KEY=$(openssl rand -hex 32)" >> .env
 
 # Create a Kind cluster (if you don't have one)
 kind create cluster --name keyforge
@@ -92,17 +95,26 @@ pnpm run dev
 
 ## Usage Example
 
-### 1. Create an Instance (VaultWarden Instance)
-
-First, generate a root JWT token signed with the root private key (configured via `ROOT_JWT_PUBLIC_KEY`):
+### 1. Generate Admin API Key
 
 ```bash
-# Create instance with root JWT authentication
-JWT_TOKEN="eyJhbGc..." # Signed with root private key
+# Generate a secure random API key
+openssl rand -hex 32
 
+# Add to your .env file
+echo "ADMIN_API_KEY=<generated_key>" >> .env
+
+# Export for current session
+export ADMIN_API_KEY=<generated_key>
+```
+
+### 2. Create an Instance (VaultWarden Instance)
+
+```bash
+# Create instance with API key authentication
 curl -X POST http://localhost:3000/admin/instances \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
   -d '{"name":"Engineering Team"}'
 ```
 
@@ -119,16 +131,16 @@ Response:
 
 **⚠️ Important:** Save the `jwt_private_key` securely - it's only sent once and is needed to sign future requests for this instance.
 
-### 2. Check Instance Status
+### 3. Check Instance Status
 
 ```bash
 curl http://localhost:3000/admin/instances/instance-2574af3733dd26f5 \
-  -H "Authorization: Bearer $JWT_TOKEN"
+  -H "Authorization: Bearer $ADMIN_API_KEY"
 ```
 
 Wait until `status: "ready"` before creating organisations.
 
-### 3. Create an Organisation
+### 4. Create an Organisation
 
 Use the instance JWT private key to sign requests:
 
@@ -142,7 +154,7 @@ curl -X POST http://localhost:3000/instances/instance-2574af3733dd26f5/organisat
   -d '{"name":"Robotics Team"}'
 ```
 
-### 4. Add a Password
+### 5. Add a Password
 
 ```bash
 curl -X POST http://localhost:3000/instances/instance-2574af3733dd26f5/organisations/organisation-e6557cc8e1656983/passwords \
