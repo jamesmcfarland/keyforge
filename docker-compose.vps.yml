@@ -1,0 +1,8 @@
+# VPS-specific Docker Compose override
+# Usage on VPS: docker compose -f docker-compose.yml -f docker-compose.vps.yml up -d
+
+services:
+  api:
+    volumes:
+      # Mount k3s kubeconfig from host into container
+      - /root/.kube/config:/root/.kube/config:ro

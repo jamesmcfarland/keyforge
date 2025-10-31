@@ -22,8 +22,7 @@ services:
     environment:
       DATABASE_URL: postgresql://keyforge:${DB_PASSWORD:-keyforge_dev}@postgres:5432/keyforge
       NODE_ENV: development
-      KUBECONFIG: ${KUBECONFIG:-/app/.kube/config}
-      KUBE_HOST: ${KUBE_HOST:-172.17.0.1}
+      KUBECONFIG: /app/.kube/config
       ADMIN_API_KEY: ${ADMIN_API_KEY:-dev_admin_key_change_in_production}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3001}
       ROOT_JWT_PUBLIC_KEY: ${ROOT_JWT_PUBLIC_KEY}
@@ -33,12 +32,9 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-      - ${HOME}/.kube/config:/app/.kube/config.orig:ro
       - ./helm-chart:/app/helm-chart:ro
     working_dir: /app
     command: npm run dev
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   frontend:
     build:
