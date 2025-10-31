@@ -42,7 +42,7 @@ This guide explains the simplified docker-native architecture where the Keyforge
 - **Persistent URLs**: Each VaultWarden instance gets a NodePort that persists across restarts
 - **Automatic Discovery**: API automatically discovers the NodePort assigned by Kubernetes
 - **Kind Support**: Detects Kind clusters and uses Docker network IP for access
-- **k3s/Minikube Support**: Falls back to localhost for standard Kubernetes setups
+- **k3s/Minikube Support**: Uses `host.docker.internal` to reach host from API container (Linux/Mac/Windows)
 
 ## Prerequisites
 

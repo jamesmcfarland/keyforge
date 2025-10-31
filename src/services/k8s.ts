@@ -113,10 +113,15 @@ export async function getServiceNodePort(namespace: string): Promise<number> {
 /**
  * Get the cluster access host for VaultWarden instances.
  * Detects if running Kind or standard k8s and returns appropriate host.
- * @returns The host URL (e.g., 'localhost' or Kind container IP)
+ * @returns The host URL (e.g., 'host.docker.internal', 'localhost', or Kind container IP)
  */
 export async function getClusterHost(): Promise<string> {
   try {
+    // Allow manual override via environment variable
+    if (process.env.K8S_HOST) {
+      return process.env.K8S_HOST
+    }
+
     // Try to detect Kind cluster by checking current context
     const { stdout: context } = await execa('kubectl', [
       'config',
@@ -137,16 +142,17 @@ export async function getClusterHost(): Promise<string> {
           return ip
         }
       } catch {
-        // Fall through to localhost if docker inspect fails
+        // Fall through if docker inspect fails
       }
     }
     
-    // Default to localhost for other k8s setups (k3s, minikube, etc.)
-    return 'localhost'
+    // For k3s/minikube, use host.docker.internal when running in Docker
+    // This works on Linux with Docker 20.10+ and extra_hosts configuration
+    return 'host.docker.internal'
   } catch (error) {
-    // If anything fails, default to localhost
-    console.warn('Failed to detect cluster host, defaulting to localhost:', error)
-    return 'localhost'
+    // If anything fails, default to host.docker.internal
+    console.warn('Failed to detect cluster host, defaulting to host.docker.internal:', error)
+    return 'host.docker.internal'
   }
 }
 
