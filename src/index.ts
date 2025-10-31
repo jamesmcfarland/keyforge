@@ -77,9 +77,10 @@ console.log('✅ CORS allowed origins:', allowedOrigins.join(', '))
 
 const server = serve({
   fetch: app.fetch,
-  port: 3000
+  port: 3000,
+  hostname: '0.0.0.0'
 }, (info) => {
-  console.log(`🚀 Server running on http://localhost:${info.port}`)
+  console.log(`🚀 Server running on http://0.0.0.0:${info.port}`)
   console.log(`📚 API Reference: http://localhost:${info.port}/`)
   console.log('')
 })
