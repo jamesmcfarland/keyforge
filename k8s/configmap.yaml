@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keyforge-config
+  namespace: keyforge
+data:
+  # Node Environment
+  NODE_ENV: "production"
+  
+  # Database URL - points to postgres service in same namespace
+  DATABASE_URL: "postgresql://keyforge:$(DB_PASSWORD)@postgres-service.keyforge.svc.cluster.local:5432/keyforge"
+  
+  # CORS Configuration
+  # Update the TAILSCALE_IP value to match your Tailscale IP address
+  # Format: http://localhost:3001,http://TAILSCALE_IP:30081
+  CORS_ORIGINS: "http://localhost:3001,http://100.x.x.x:30081"
+  
+  # Frontend API URL Configuration
+  # Update to match your Tailscale IP if needed
+  VITE_API_BASE: "http://localhost:3000"

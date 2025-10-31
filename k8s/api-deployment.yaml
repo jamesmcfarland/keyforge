@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keyforge-api
+  namespace: keyforge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keyforge-api
+  template:
+    metadata:
+      labels:
+        app: keyforge-api
+    spec:
+      serviceAccountName: keyforge-api  # Use ServiceAccount for in-cluster kubectl/helm
+      containers:
+      - name: api
+        image: keyforge-api:latest
+        imagePullPolicy: Never  # Use local image from k3s import
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        # Load configuration from ConfigMap
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: keyforge-config
+              key: NODE_ENV
+        - name: CORS_ORIGINS
+          valueFrom:
+            configMapKeyRef:
+              name: keyforge-config
+              key: CORS_ORIGINS
+        # Load secrets
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: keyforge-secret
+              key: DB_PASSWORD
+        - name: ADMIN_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: keyforge-secret
+              key: ADMIN_API_KEY
+        - name: ROOT_JWT_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: keyforge-secret
+              key: ROOT_JWT_PUBLIC_KEY
+              optional: true
+        # Construct DATABASE_URL from components
+        - name: DATABASE_URL
+          value: "postgresql://keyforge:$(DB_PASSWORD)@postgres-service.keyforge.svc.cluster.local:5432/keyforge"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
