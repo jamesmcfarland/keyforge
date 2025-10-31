@@ -25,6 +25,8 @@ services:
       KUBECONFIG: ${KUBECONFIG:-/app/.kube/config}
       KUBE_HOST: ${KUBE_HOST:-host.docker.internal}
       ADMIN_API_KEY: ${ADMIN_API_KEY:-dev_admin_key_change_in_production}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3001}
+      ROOT_JWT_PUBLIC_KEY: ${ROOT_JWT_PUBLIC_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,7 +47,8 @@ services:
     ports:
       - "3001:5173"
     environment:
-      VITE_API_BASE: http://localhost:3000
+      VITE_API_BASE: ${VITE_API_BASE:-http://localhost:3000}
+      VITE_ADMIN_API_KEY: ${VITE_ADMIN_API_KEY}
     depends_on:
       - api
     volumes:
