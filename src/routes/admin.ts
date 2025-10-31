@@ -26,7 +26,8 @@ admin.post('/instances', async (c) => {
       timeCost: 3,
       parallelism: 4
     })
-     const vaultwd_url = `http://vaultwd-service.${instanceId}.svc.cluster.local`
+     // Placeholder URL - will be updated after provisioning with actual NodePort
+     const vaultwd_url = `http://pending.${instanceId}`
 
      const { privateKey, publicKey } = generateECCKeyPair()
 
@@ -42,10 +43,19 @@ admin.post('/instances', async (c) => {
     await registry.addInstance(instance)
     await storeInstanceKey(instanceId, publicKey)
 
+    // Provision instance asynchronously and update URL when complete
     k8s.provisionInstance(instanceId, hashedToken)
-      .then(() => {
-        registry.updateInstanceStatus(instanceId, 'ready')
-        console.log(`Instance ${instanceId} provisioned successfully`)
+      .then(async () => {
+        // Get the actual NodePort URL after provisioning
+        try {
+          const actualUrl = await k8s.getInstanceUrl(instanceId)
+          await registry.updateInstanceUrl(instanceId, actualUrl)
+          await registry.updateInstanceStatus(instanceId, 'ready')
+          console.log(`Instance ${instanceId} provisioned successfully at ${actualUrl}`)
+        } catch (error) {
+          console.error(`Failed to get instance URL for ${instanceId}:`, error)
+          await registry.updateInstanceStatus(instanceId, 'failed', 'Failed to get instance URL')
+        }
       })
       .catch((error) => {
         registry.updateInstanceStatus(instanceId, 'failed', error.message)

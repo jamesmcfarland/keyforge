@@ -10,4 +10,4 @@ spec:
   - protocol: TCP
     port: {{ .Values.vaultwd.port }}
     targetPort: {{ .Values.vaultwd.port }}
-  type: ClusterIP
+  type: NodePort

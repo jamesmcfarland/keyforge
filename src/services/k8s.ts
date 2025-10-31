@@ -85,3 +85,78 @@ async function waitForDeployment(namespace: string, deploymentName: string, time
   }
   throw new Error(`Deployment ${deploymentName} in namespace ${namespace} did not become ready within timeout`)
 }
+
+/**
+ * Get the NodePort assigned to the vaultwd service
+ * @param namespace - The instance namespace
+ * @returns The NodePort number
+ */
+export async function getServiceNodePort(namespace: string): Promise<number> {
+  try {
+    const { stdout } = await execa('kubectl', [
+      'get',
+      'service',
+      'vaultwd-service',
+      '-n', namespace,
+      '-o', 'jsonpath={.spec.ports[0].nodePort}'
+    ])
+    const port = parseInt(stdout.trim(), 10)
+    if (isNaN(port)) {
+      throw new Error(`Invalid NodePort returned: ${stdout}`)
+    }
+    return port
+  } catch (error) {
+    throw new Error(`Failed to get NodePort for namespace ${namespace}: ${error}`)
+  }
+}
+
+/**
+ * Get the cluster access host for VaultWarden instances.
+ * Detects if running Kind or standard k8s and returns appropriate host.
+ * @returns The host URL (e.g., 'localhost' or Kind container IP)
+ */
+export async function getClusterHost(): Promise<string> {
+  try {
+    // Try to detect Kind cluster by checking current context
+    const { stdout: context } = await execa('kubectl', [
+      'config',
+      'current-context'
+    ])
+    
+    // If it's a Kind cluster, get the container IP
+    if (context.includes('kind')) {
+      try {
+        const { stdout: kindIP } = await execa('docker', [
+          'inspect',
+          'kind-control-plane',
+          '--format',
+          '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
+        ])
+        const ip = kindIP.trim()
+        if (ip) {
+          return ip
+        }
+      } catch {
+        // Fall through to localhost if docker inspect fails
+      }
+    }
+    
+    // Default to localhost for other k8s setups (k3s, minikube, etc.)
+    return 'localhost'
+  } catch (error) {
+    // If anything fails, default to localhost
+    console.warn('Failed to detect cluster host, defaulting to localhost:', error)
+    return 'localhost'
+  }
+}
+
+/**
+ * Build the VaultWarden URL for an instance after provisioning
+ * @param namespace - The instance namespace
+ * @returns The complete VaultWarden URL
+ */
+export async function getInstanceUrl(namespace: string): Promise<string> {
+  const host = await getClusterHost()
+  const nodePort = await getServiceNodePort(namespace)
+  return `http://${host}:${nodePort}`
+}

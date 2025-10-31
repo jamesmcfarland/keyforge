@@ -50,6 +50,12 @@ export async function updateInstanceStatus(id: string, status: Instance['status'
     .where(eq(instances.id, id))
 }
 
+export async function updateInstanceUrl(id: string, vaultwd_url: string): Promise<void> {
+  await db.update(instances)
+    .set({ vaultwd_url })
+    .where(eq(instances.id, id))
+}
+
 export async function deleteInstance(id: string): Promise<boolean> {
   const result = await db.delete(instances).where(eq(instances.id, id)).returning()
   return result.length > 0
