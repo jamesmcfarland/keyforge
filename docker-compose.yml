@@ -35,8 +35,6 @@ services:
       - /app/node_modules
       - ${HOME}/.kube/config:/app/.kube/config.orig:ro
       - ./helm-chart:/app/helm-chart:ro
-      - /usr/local/bin/kubectl:/usr/local/bin/kubectl:ro
-      - /usr/local/bin/helm:/usr/local/bin/helm:ro
     working_dir: /app
     command: npm run dev
     extra_hosts:
