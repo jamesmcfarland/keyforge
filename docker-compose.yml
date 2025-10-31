@@ -48,7 +48,7 @@ services:
       - "3001:5173"
     environment:
       VITE_API_BASE: ${VITE_API_BASE:-http://localhost:3000}
-      VITE_ADMIN_API_KEY: ${VITE_ADMIN_API_KEY}
+      VITE_ADMIN_API_KEY: ${ADMIN_API_KEY}
     depends_on:
       - api
     volumes:
