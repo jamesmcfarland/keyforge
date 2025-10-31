@@ -280,61 +280,72 @@ EOF
 
 ### Option 1: Docker with docker-compose
 
+The same `docker-compose.yml` works for both local development and VPS/production deployments. Just configure it with environment variables.
+
 **1. Clone repository:**
 ```bash
 git clone <your-repo-url> keyforge
 cd keyforge
 ```
 
-**2. Create production environment file:**
+**2. Install k3s (on VPS/production server):**
 ```bash
-cp .env.example .env.production
+curl -sfL https://get.k3s.io | sh -
+
+# Copy kubeconfig to standard location
+mkdir -p /root/.kube
+cp /etc/rancher/k3s/k3s.yaml /root/.kube/config
+chmod 600 /root/.kube/config
+
+# Test kubectl access
+kubectl get nodes
 ```
 
-**3. Edit `.env.production`:**
+**3. Create production environment file:**
+```bash
+cp .env.example .env
+```
+
+**4. Edit `.env` for production:**
 ```env
 # Database
-DATABASE_URL=postgresql://keyforge:STRONG_PASSWORD@your-db-host:5432/keyforge
-DB_PASSWORD=STRONG_PASSWORD
+DB_PASSWORD=STRONG_RANDOM_PASSWORD
 
-# Kubernetes
-KUBECONFIG=/app/.kube/config
+# Kubernetes (for VPS with k3s)
+KUBECONFIG_PATH=/root/.kube/config
+KUBE_CACHE_PATH=/root/.kube/cache
+KUBECONFIG=/root/.kube/config
 
 # Environment
 NODE_ENV=production
-```
+API_COMMAND=npm start
 
-**4. Create production docker-compose:**
+# Admin API Key (generate with: openssl rand -hex 32)
+ADMIN_API_KEY=your_generated_key_here
 
-```yaml
-# docker-compose.prod.yml
-services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      NODE_ENV: production
-      KUBECONFIG: /app/.kube/config
-    volumes:
-      - ${HOME}/.kube/config:/app/.kube/config:ro
-      - ./helm-chart:/app/helm-chart:ro
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+# CORS (set to your domain)
+CORS_ORIGINS=https://yourdomain.com
+
+# Frontend API URL
+VITE_API_BASE=https://api.yourdomain.com
+
+# JWT (optional, for instance-level auth)
+ROOT_JWT_PUBLIC_KEY=your_base64_encoded_public_key_here
 ```
 
 **5. Deploy:**
 ```bash
-docker compose -f docker-compose.prod.yml up -d
+docker compose up -d
 ```
+
+**6. View logs:**
+```bash
+docker compose logs -f api
+```
+
+The unified `docker-compose.yml` automatically adapts based on your environment variables:
+- **Local dev**: Uses local `.kube/config` and runs in dev mode
+- **VPS/Production**: Mounts `/root/.kube/config` from k3s and runs in production mode
 
 ### Option 2: Systemd Service
 

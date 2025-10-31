@@ -21,8 +21,8 @@ services:
       - "3000:3000"
     environment:
       DATABASE_URL: postgresql://keyforge:${DB_PASSWORD:-keyforge_dev}@postgres:5432/keyforge
-      NODE_ENV: development
-      KUBECONFIG: /app/.kube/config
+      NODE_ENV: ${NODE_ENV:-development}
+      KUBECONFIG: ${KUBECONFIG:-/app/.kube/config}
       ADMIN_API_KEY: ${ADMIN_API_KEY:-dev_admin_key_change_in_production}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3001}
       ROOT_JWT_PUBLIC_KEY: ${ROOT_JWT_PUBLIC_KEY}
@@ -33,8 +33,11 @@ services:
       - .:/app
       - /app/node_modules
       - ./helm-chart:/app/helm-chart:ro
+      # Conditional kubeconfig mount (set KUBECONFIG_PATH in .env for VPS)
+      - ${KUBECONFIG_PATH:-./kube/config}:${KUBECONFIG:-/app/.kube/config}:ro
+      - ${KUBE_CACHE_PATH:-./kube/cache}:/root/.kube/cache
     working_dir: /app
-    command: npm run dev
+    command: ${API_COMMAND:-npm run dev}
 
   frontend:
     build:
