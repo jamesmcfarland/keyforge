@@ -32,7 +32,7 @@ const app = new Hono()
 app.use('*', logger())
 
 app.use('*', cors({
-  origin: ['http://localhost:3001'],
+  origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3001'],
   credentials: true
 }))
 
@@ -71,6 +71,9 @@ if (!process.env.ADMIN_API_KEY) {
 }
 console.log('✅ Admin API key configured')
 
+// Log CORS configuration
+const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3001']
+console.log('✅ CORS allowed origins:', allowedOrigins.join(', '))
 
 const server = serve({
   fetch: app.fetch,
