@@ -1,12 +1,20 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger';
 import { pino, type Logger } from 'pino';
+import 'dotenv/config';
+import { drizzle } from 'drizzle-orm/node-postgres';
 
+const db = drizzle(process.env.DATABASE_URL!);
 declare module 'hono' {
   interface ContextVariableMap {
     logger: Logger
+    db: typeof db
   }
 }
+
+
+
+
 
 
 const pinoLogger = pino({
@@ -33,7 +41,7 @@ app.use(async (c, next) => {
 
 app.get('/', (c) => {
   const logger = c.get("logger");
-  logger.debug("heartbeat")
+  logger.info("heartbeat")
   return c.json({ message: "OK" })
 })
 
