@@ -1,18 +1,41 @@
 import { Hono } from 'hono'
-import { pinoLogger } from 'hono-pino'
+import { logger } from 'hono/logger';
+import { pino, type Logger } from 'pino';
 
+declare module 'hono' {
+  interface ContextVariableMap {
+    logger: Logger
+  }
+}
+
+
+const pinoLogger = pino({
+  level: process.env.LOG_LEVEL || 'info',
+  transport: {
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+      translateTime: 'SYS:standard',
+      ignore: 'pid,hostname',
+      singleLine: false,
+    },
+  },
+});
 const app = new Hono()
 
-app.use(pinoLogger({
-  pino: {
-    level: "debug"
-  }
-}))
+
+app.use(logger());
+
+app.use(async (c, next) => {
+  c.set('logger', pinoLogger);
+  await next();
+});
 
 app.get('/', (c) => {
-  const logger = c.var;
-
-  return c.json({ message: 'Hello Hono!' })
+  const logger = c.get("logger");
+  logger.debug("heartbeat")
+  return c.json({ message: "OK" })
 })
+
 
 export default app
